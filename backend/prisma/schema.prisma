@@ -1,0 +1,591 @@
+// Prisma Schema for EL-FAITH MICROFINANCE
+// Integrated Loan Management and Financial Operations System
+// Location: Wassa Powuako, Western Region, Ghana
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  CEO
+  BRANCH_MANAGER
+  LOAN_OFFICER
+  CASHIER
+  ACCOUNTANT
+  AUDITOR
+  CUSTOMER_SERVICE
+  CLIENT
+}
+
+enum LoanStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  MORE_INFO_REQUIRED
+  APPROVED
+  REJECTED
+  WITHDRAWN
+  AWAITING_DISBURSEMENT
+  DISBURSED
+  ACTIVE
+  OVERDUE
+  FULLY_PAID
+  RESCHEDULED
+  WRITTEN_OFF
+  CLOSED
+}
+
+enum InterestMethod {
+  FLAT_RATE
+  REDUCING_BALANCE
+}
+
+enum RepaymentFrequency {
+  DAILY
+  WEEKLY
+  FORTNIGHTLY
+  MONTHLY
+}
+
+enum PaymentMethod {
+  CASH
+  MOBILE_MONEY
+  BANK_TRANSFER
+  CHEQUE
+}
+
+enum ScheduleStatus {
+  UPCOMING
+  DUE_TODAY
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+}
+
+enum ExpenseStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum TransactionType {
+  DISBURSEMENT
+  REPAYMENT
+  EXPENSE
+  CASH_DEPOSIT
+  CASH_WITHDRAWAL
+  TRANSFER
+  REVERSAL
+  FEE_COLLECTION
+}
+
+model User {
+  id                  Int          @id @default(autoincrement())
+  username            String       @unique
+  email               String       @unique
+  passwordHash        String
+  role                Role         @default(LOAN_OFFICER)
+  staffId             String?      @unique
+  isActive            Boolean      @default(true)
+  isSuspended         Boolean      @default(false)
+  failedLoginAttempts Int          @default(0)
+  lastLoginAt         DateTime?
+  customPermissions   String?      @db.Text // JSON array of custom permission overrides
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  staffProfile        StaffProfile?
+  client              Client?      @relation("ClientUserAccount")
+  
+  createdClients      Client[]     @relation("ClientCreator")
+  assignedClients     Client[]     @relation("ClientLoanOfficer")
+  
+  submittedApplications LoanApplication[] @relation("AppCreatedBy")
+  reviewedApplications  LoanApplicationReview[]
+  approvedApplications  LoanApplication[] @relation("AppApprovedBy")
+  
+  disbursementsPrepared LoanDisbursement[] @relation("DisbPreparedBy")
+  disbursementsAuthorized LoanDisbursement[] @relation("DisbAuthorizedBy")
+  disbursementsPaid     LoanDisbursement[] @relation("DisbPaidBy")
+  
+  repaymentsRecorded    Repayment[] @relation("RepaymentCashier")
+  reversalsRequested    TransactionReversal[] @relation("ReversalRequestedBy")
+  reversalsApproved     TransactionReversal[] @relation("ReversalApprovedBy")
+  
+  expensesSubmitted     Expense[] @relation("ExpenseSubmittedBy")
+  expensesApproved      Expense[] @relation("ExpenseApprovedBy")
+  expensesPaid          Expense[] @relation("ExpensePaidBy")
+  
+  followUps             FollowUpActivity[]
+  notifications         Notification[]
+  auditLogs             AuditLog[]
+  complaintsAssigned    ClientComplaint[] @relation("ComplaintAssignedTo")
+  financialTransactions FinancialTransaction[] @relation("TxnPerformedBy")
+}
+
+model Branch {
+  id          Int      @id @default(autoincrement())
+  name        String
+  code        String   @unique
+  address     String
+  town        String   @default("Wassa Powuako")
+  region      String   @default("Western Region")
+  phone       String
+  email       String?
+  isMainBranch Boolean @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  staffProfiles StaffProfile[]
+  clients       Client[]
+  loans         Loan[]
+  cashAccounts  CashAccount[]
+}
+
+model StaffProfile {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique
+  fullName      String
+  phone         String
+  altPhone      String?
+  department    String
+  jobTitle      String
+  branchId      Int
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch        Branch   @relation(fields: [branchId], references: [id])
+}
+
+model Client {
+  id                   Int       @id @default(autoincrement())
+  clientId             String    @unique // e.g. EF-CL-00101
+  userId               Int?      @unique
+  fullName             String
+  dateOfBirth          DateTime?
+  gender               String?
+  phone                String
+  altPhone             String?
+  email                String?
+  residentialAddress   String
+  communityTown        String    @default("Wassa Powuako")
+  ghanaCardNumber      String    @unique
+  occupation           String
+  employerBusinessName String?
+  employmentAddress    String?
+  nextOfKinName        String
+  nextOfKinPhone       String
+  nextOfKinRelation    String
+  photoUrl             String?
+  documentsUrl         String?   @db.Text
+  notes                String?   @db.Text
+  status               String    @default("ACTIVE") // ACTIVE, INACTIVE, BLACKLISTED
+  
+  branchId             Int
+  assignedOfficerId    Int?
+  createdByUserId      Int?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user                 User?     @relation("ClientUserAccount", fields: [userId], references: [id])
+  branch               Branch    @relation(fields: [branchId], references: [id])
+  assignedOfficer      User?     @relation("ClientLoanOfficer", fields: [assignedOfficerId], references: [id])
+  createdByUser        User?     @relation("ClientCreator", fields: [createdByUserId], references: [id])
+
+  guarantors           Guarantor[]
+  loanApplications     LoanApplication[]
+  loans                Loan[]
+  repayments           Repayment[]
+  followUps            FollowUpActivity[]
+  complaints           ClientComplaint[]
+}
+
+model Guarantor {
+  id              Int      @id @default(autoincrement())
+  clientId        Int
+  fullName        String
+  phone           String
+  altPhone        String?
+  address         String
+  occupation      String
+  employer        String?
+  ghanaCardNumber String
+  relationship    String
+  liabilityAgreed Boolean  @default(true)
+  idCardPhotoUrl  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
+
+model LoanProduct {
+  id                  Int                @id @default(autoincrement())
+  code                String             @unique // e.g. PER-01, BUS-01, EMG-01, SAL-01, GRP-01
+  name                String
+  description         String             @db.Text
+  minAmount           Decimal            @db.Decimal(12, 2)
+  maxAmount           Decimal            @db.Decimal(12, 2)
+  interestMethod      InterestMethod     @default(FLAT_RATE)
+  defaultInterestRate Decimal            @db.Decimal(5, 2) // percentage, e.g. 15.00%
+  minInterestRate     Decimal            @db.Decimal(5, 2)
+  maxInterestRate     Decimal            @db.Decimal(5, 2)
+  minTermMonths       Int                @default(1)
+  maxTermMonths       Int                @default(36)
+  repaymentFrequency  RepaymentFrequency @default(MONTHLY)
+  processingFeeRate   Decimal            @default(2.50) @db.Decimal(5, 2) // %
+  insuranceFeeRate    Decimal            @default(1.00) @db.Decimal(5, 2) // %
+  isActive            Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  applications        LoanApplication[]
+  loans               Loan[]
+}
+
+model LoanApplication {
+  id                     Int                 @id @default(autoincrement())
+  applicationNumber      String              @unique // e.g. EF-APP-2026-0001
+  clientId               Int
+  productId              Int
+  requestedAmount        Decimal             @db.Decimal(12, 2)
+  approvedAmount         Decimal?            @db.Decimal(12, 2)
+  repaymentPeriodMonths  Int
+  repaymentFrequency     RepaymentFrequency  @default(MONTHLY)
+  proposedInterestRate   Decimal             @db.Decimal(5, 2)
+  monthlyIncome          Decimal             @db.Decimal(12, 2)
+  affordabilityDetails   String?             @db.Text
+  purpose                String              @db.Text
+  status                 LoanStatus          @default(SUBMITTED)
+  rejectionReason        String?             @db.Text
+  notes                  String?             @db.Text
+  
+  createdByUserId        Int
+  assignedOfficerId      Int?
+  approvedByUserId       Int?
+  approvedAt             DateTime?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  client                 Client              @relation(fields: [clientId], references: [id])
+  product                LoanProduct         @relation(fields: [productId], references: [id])
+  createdByUser          User                @relation("AppCreatedBy", fields: [createdByUserId], references: [id])
+  approvedByUser         User?               @relation("AppApprovedBy", fields: [approvedByUserId], references: [id])
+
+  reviews                LoanApplicationReview[]
+  loan                   Loan?
+}
+
+model LoanApplicationReview {
+  id             Int             @id @default(autoincrement())
+  applicationId  Int
+  reviewerId     Int
+  decision       String          // APPROVED, REJECTED, MORE_INFO_REQUIRED
+  comments       String          @db.Text
+  approvedAmount Decimal?        @db.Decimal(12, 2)
+  interestRate   Decimal?        @db.Decimal(5, 2)
+  termMonths     Int?
+  conditions     String?         @db.Text
+  createdAt      DateTime        @default(now())
+
+  application    LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  reviewer       User            @relation(fields: [reviewerId], references: [id])
+}
+
+model Loan {
+  id                      Int                @id @default(autoincrement())
+  loanAccountNumber       String             @unique // e.g. EF-LN-2026-0001
+  applicationId           Int                @unique
+  clientId                Int
+  productId               Int
+  branchId                Int
+  
+  // Stored snapshots of terms at origination time
+  principalAmount         Decimal            @db.Decimal(12, 2)
+  approvedInterestRate    Decimal            @db.Decimal(5, 2)
+  interestMethod          InterestMethod
+  repaymentFrequency      RepaymentFrequency
+  termMonths              Int
+  
+  // Financial totals (Decimal-safe)
+  totalScheduledInterest  Decimal            @db.Decimal(12, 2)
+  totalFees               Decimal            @db.Decimal(12, 2)
+  totalScheduledRepayment Decimal            @db.Decimal(12, 2)
+  
+  totalPrincipalPaid      Decimal            @default(0.00) @db.Decimal(12, 2)
+  totalInterestPaid       Decimal            @default(0.00) @db.Decimal(12, 2)
+  totalFeesPaid           Decimal            @default(0.00) @db.Decimal(12, 2)
+  totalPaid               Decimal            @default(0.00) @db.Decimal(12, 2)
+  
+  outstandingPrincipal    Decimal            @db.Decimal(12, 2)
+  outstandingInterest     Decimal            @db.Decimal(12, 2)
+  outstandingFees         Decimal            @default(0.00) @db.Decimal(12, 2)
+  totalOutstanding        Decimal            @db.Decimal(12, 2)
+  
+  status                  LoanStatus         @default(AWAITING_DISBURSEMENT)
+  disbursedAt             DateTime?
+  maturityDate            DateTime?
+  nextPaymentDate         DateTime?
+  nextAmountDue           Decimal?           @db.Decimal(12, 2)
+  daysOverdue             Int                @default(0)
+  
+  assignedOfficerId       Int?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  application             LoanApplication    @relation(fields: [applicationId], references: [id])
+  client                  Client             @relation(fields: [clientId], references: [id])
+  product                 LoanProduct        @relation(fields: [productId], references: [id])
+  branch                  Branch             @relation(fields: [branchId], references: [id])
+
+  disbursement            LoanDisbursement?
+  repaymentSchedules      RepaymentSchedule[]
+  repayments              Repayment[]
+  followUps               FollowUpActivity[]
+}
+
+model LoanDisbursement {
+  id                      Int           @id @default(autoincrement())
+  disbursementReference   String        @unique // e.g. EF-DISB-2026-0001
+  loanId                  Int           @unique
+  clientId                Int
+  grossPrincipal          Decimal       @db.Decimal(12, 2)
+  processingFeeDeduction  Decimal       @default(0.00) @db.Decimal(12, 2)
+  insuranceFeeDeduction   Decimal       @default(0.00) @db.Decimal(12, 2)
+  otherDeductions         Decimal       @default(0.00) @db.Decimal(12, 2)
+  netDisbursedAmount      Decimal       @db.Decimal(12, 2)
+  paymentMethod           PaymentMethod @default(CASH)
+  destinationAccount      String?       // Momo number or Bank Account
+  transactionReference    String?       // Mobile money txn id / Bank slip ref
+  
+  preparedByUserId        Int
+  authorizedByUserId      Int?
+  disbursedByUserId       Int
+  
+  voucherUrl              String?
+  notes                   String?       @db.Text
+  disbursedAt             DateTime      @default(now())
+  createdAt               DateTime      @default(now())
+
+  loan                    Loan          @relation(fields: [loanId], references: [id])
+  preparedByUser          User          @relation("DisbPreparedBy", fields: [preparedByUserId], references: [id])
+  authorizedByUser        User?         @relation("DisbAuthorizedBy", fields: [authorizedByUserId], references: [id])
+  disbursedByUser         User          @relation("DisbPaidBy", fields: [disbursedByUserId], references: [id])
+}
+
+model RepaymentSchedule {
+  id                Int            @id @default(autoincrement())
+  loanId            Int
+  installmentNumber Int
+  dueDate           DateTime
+  principalDue      Decimal        @db.Decimal(12, 2)
+  interestDue       Decimal        @db.Decimal(12, 2)
+  feesDue           Decimal        @default(0.00) @db.Decimal(12, 2)
+  totalDue          Decimal        @db.Decimal(12, 2)
+  
+  principalPaid     Decimal        @default(0.00) @db.Decimal(12, 2)
+  interestPaid      Decimal        @default(0.00) @db.Decimal(12, 2)
+  feesPaid          Decimal        @default(0.00) @db.Decimal(12, 2)
+  totalPaid         Decimal        @default(0.00) @db.Decimal(12, 2)
+  
+  remainingBalance  Decimal        @db.Decimal(12, 2)
+  status            ScheduleStatus @default(UPCOMING)
+  paidAt            DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  loan              Loan           @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId, dueDate])
+}
+
+model Repayment {
+  id                     Int           @id @default(autoincrement())
+  receiptNumber          String        @unique // e.g. EF-REC-2026-0001
+  loanId                 Int
+  clientId               Int
+  paymentReference       String        @unique
+  amountPaid             Decimal       @db.Decimal(12, 2)
+  paymentDate            DateTime      @default(now())
+  paymentMethod          PaymentMethod @default(CASH)
+  transactionReference   String?       // Momo ref or Bank slip ref
+  
+  principalComponent     Decimal       @db.Decimal(12, 2)
+  interestComponent      Decimal       @db.Decimal(12, 2)
+  feesComponent          Decimal       @default(0.00) @db.Decimal(12, 2)
+  outstandingBalanceAfter Decimal      @db.Decimal(12, 2)
+  
+  receivingCashierId     Int
+  receiptPdfUrl          String?
+  
+  isReversed             Boolean       @default(false)
+  reversalReason         String?       @db.Text
+  reversedAt             DateTime?
+  reversedByUserId       Int?
+  notes                  String?       @db.Text
+  createdAt              DateTime      @default(now())
+
+  loan                   Loan          @relation(fields: [loanId], references: [id])
+  client                 Client        @relation(fields: [clientId], references: [id])
+  cashier                User          @relation("RepaymentCashier", fields: [receivingCashierId], references: [id])
+
+  reversal               TransactionReversal?
+}
+
+model TransactionReversal {
+  id                  Int       @id @default(autoincrement())
+  originalRepaymentId Int       @unique
+  reason              String    @db.Text
+  requestedByUserId   Int
+  approvedByUserId    Int?
+  status              String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  approvedAt          DateTime?
+  createdAt           DateTime  @default(now())
+
+  repayment           Repayment @relation(fields: [originalRepaymentId], references: [id])
+  requestedByUser     User      @relation("ReversalRequestedBy", fields: [requestedByUserId], references: [id])
+  approvedByUser      User?     @relation("ReversalApprovedBy", fields: [approvedByUserId], references: [id])
+}
+
+model CashAccount {
+  id             Int       @id @default(autoincrement())
+  name           String    // Main Vault, Cash Drawer 1, MTN MoMo Float, Telecel Float, GCB Bank Acc
+  type           String    // CASH_DRAWER, BANK_ACCOUNT, MOMO_FLOAT, VAULT
+  accountNumber  String?
+  branchId       Int
+  currentBalance Decimal   @default(0.00) @db.Decimal(14, 2)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  branch         Branch    @relation(fields: [branchId], references: [id])
+  debitTransactions  FinancialTransaction[] @relation("DebitAccount")
+  creditTransactions FinancialTransaction[] @relation("CreditAccount")
+}
+
+model FinancialTransaction {
+  id                Int             @id @default(autoincrement())
+  reference         String          @unique // e.g. EF-TXN-2026-0001
+  type              TransactionType
+  amount            Decimal         @db.Decimal(14, 2)
+  debitAccountId    Int?
+  creditAccountId   Int?
+  loanId            Int?
+  repaymentId       Int?
+  expenseId         Int?
+  description       String          @db.Text
+  performedByUserId Int
+  timestamp         DateTime        @default(now())
+  createdAt         DateTime        @default(now())
+
+  debitAccount      CashAccount?    @relation("DebitAccount", fields: [debitAccountId], references: [id])
+  creditAccount     CashAccount?    @relation("CreditAccount", fields: [creditAccountId], references: [id])
+  performedByUser   User            @relation("TxnPerformedBy", fields: [performedByUserId], references: [id])
+}
+
+model Expense {
+  id                 Int           @id @default(autoincrement())
+  expenseReference   String        @unique // e.g. EF-EXP-2026-0001
+  category           String        // RENT, UTILITIES, STATIONERY, FUEL, SALARIES, MARKETING, REPAIRS, OTHER
+  description        String        @db.Text
+  amount             Decimal       @db.Decimal(12, 2)
+  expenseDate        DateTime      @default(now())
+  paymentMethod      PaymentMethod @default(CASH)
+  status             ExpenseStatus @default(PENDING_APPROVAL)
+  receiptDocumentUrl String?
+  notes              String?       @db.Text
+  
+  submittedByUserId  Int
+  approvedByUserId   Int?
+  paidByUserId       Int?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  submittedByUser    User          @relation("ExpenseSubmittedBy", fields: [submittedByUserId], references: [id])
+  approvedByUser     User?         @relation("ExpenseApprovedBy", fields: [approvedByUserId], references: [id])
+  paidByUser         User?         @relation("ExpensePaidBy", fields: [paidByUserId], references: [id])
+}
+
+model FollowUpActivity {
+  id                 Int      @id @default(autoincrement())
+  clientId           Int
+  loanId             Int?
+  officerId          Int
+  interactionType    String   // PHONE_CALL, FIELD_VISIT, OFFICE_VISIT, SMS_REMINDER, FORMAL_LETTER
+  followUpDate       DateTime @default(now())
+  notes              String   @db.Text
+  promisedPaymentDate DateTime?
+  promisedAmount     Decimal? @db.Decimal(12, 2)
+  outcome            String?
+  createdAt          DateTime @default(now())
+
+  client             Client   @relation(fields: [clientId], references: [id])
+  loan               Loan?    @relation(fields: [loanId], references: [id])
+  officer            User     @relation(fields: [officerId], references: [id])
+}
+
+model Notification {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  title          String
+  message        String   @db.Text
+  type           String   @default("INFO") // INFO, WARNING, ALERT, SUCCESS
+  channel        String   @default("IN_APP") // IN_APP, SMS, EMAIL
+  deliveryStatus String   @default("DELIVERED") // PENDING, DELIVERED, FAILED
+  isRead         Boolean  @default(false)
+  readAt         DateTime?
+  createdAt      DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  userEmail  String?
+  action     String   // e.g. "USER_LOGIN", "LOAN_APPROVED", "REPAYMENT_RECORDED", "REVERSAL_APPROVED"
+  entityType String   // e.g. "Loan", "Repayment", "Client", "Expense", "User"
+  entityId   String?
+  details    String?  @db.Text // JSON metadata of changes
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([action, createdAt])
+  @@index([entityType, entityId])
+}
+
+model ClientComplaint {
+  id               Int      @id @default(autoincrement())
+  clientId         Int
+  subject          String
+  description      String   @db.Text
+  priority         String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status           String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  assignedToUserId Int?
+  resolutionNotes  String?  @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  client           Client   @relation(fields: [clientId], references: [id])
+  assignedToUser   User?    @relation("ComplaintAssignedTo", fields: [assignedToUserId], references: [id])
+}
+
+model SystemSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  updatedAt   DateTime @updatedAt
+}
