@@ -1,6 +1,9 @@
 <?php
 // EL-FAITH MICROFINANCE - Interactive Loan Calculator
 // Schedule automatically starts exactly 1 week (7 days) after disbursement
+require_once __DIR__ . '/config/auth.php';
+requireExecutive();
+
 $activePage = 'calculator';
 $pageTitle = 'Loan Schedule Calculator';
 
@@ -8,15 +11,21 @@ require_once __DIR__ . '/includes/header.php';
 
 $principal = floatval($_GET['principal'] ?? 5000);
 $rate = floatval($_GET['rate'] ?? 10);
-$termMonths = intval($_GET['term'] ?? 6);
-$frequency = $_GET['frequency'] ?? 'WEEKLY';
+$termMonths = intval($_GET['term'] ?? 1);
+$frequency = $_GET['frequency'] ?? 'DAILY';
 $startDateStr = $_GET['start_date'] ?? date('Y-m-d');
 
 // Calculations
 $totalInterest = round($principal * ($rate / 100) * ($termMonths / 12), 2);
 $totalRepayable = round($principal + $totalInterest, 2);
 
-$installmentCount = ($frequency === 'WEEKLY') ? max(1, $termMonths * 4) : max(1, $termMonths);
+if ($frequency === 'DAILY') {
+    $installmentCount = max(1, $termMonths * 30);
+} elseif ($frequency === 'WEEKLY') {
+    $installmentCount = max(1, $termMonths * 4);
+} else {
+    $installmentCount = max(1, $termMonths);
+}
 $installmentAmount = round($totalRepayable / $installmentCount, 2);
 
 // Generate Schedule
@@ -41,7 +50,9 @@ for ($i = 1; $i <= $installmentCount; $i++) {
         'balance' => $balance,
     ];
 
-    if ($frequency === 'WEEKLY') {
+    if ($frequency === 'DAILY') {
+        $currentDate->modify('+1 day');
+    } elseif ($frequency === 'WEEKLY') {
         $currentDate->modify('+7 days');
     } else {
         $currentDate->modify('+1 month');
@@ -82,7 +93,8 @@ for ($i = 1; $i <= $installmentCount; $i++) {
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Repayment Frequency</label>
                     <select name="frequency" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        <option value="WEEKLY" <?= $frequency === 'WEEKLY' ? 'selected' : '' ?>>Weekly (Standard)</option>
+                        <option value="DAILY" <?= $frequency === 'DAILY' ? 'selected' : '' ?>>Daily (Standard Susu / Microfinance)</option>
+                        <option value="WEEKLY" <?= $frequency === 'WEEKLY' ? 'selected' : '' ?>>Weekly</option>
                         <option value="MONTHLY" <?= $frequency === 'MONTHLY' ? 'selected' : '' ?>>Monthly</option>
                     </select>
                 </div>
@@ -185,3 +197,4 @@ for ($i = 1; $i <= $installmentCount; $i++) {
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
+

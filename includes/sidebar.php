@@ -1,8 +1,9 @@
 <?php
 // EL-FAITH MICROFINANCE - Sidebar Navigation
 $role = $user['role'] ?? '';
-$isAdmin = ($role === ROLE_SUPER_ADMIN);
-$isExec = ($role === ROLE_SUPER_ADMIN || $role === ROLE_CEO);
+$isAdmin = isSuperAdmin();
+$isExec = isCeoOrSuperAdmin();
+$isStaffOnly = isStaffOnly();
 ?>
 <aside class="w-64 bg-slate-900 text-slate-300 flex-shrink-0 hidden md:flex flex-col border-r border-slate-800">
     <!-- Brand Header -->
@@ -18,7 +19,27 @@ $isExec = ($role === ROLE_SUPER_ADMIN || $role === ROLE_CEO);
 
     <!-- Nav Links -->
     <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2">Operations</div>
+        <?php if ($isStaffOnly): ?>
+        <!-- ============================================== -->
+        <!-- STAFF ONLY VIEW: REGISTER CLIENT & RECEIVE PAYMENT -->
+        <!-- ============================================== -->
+        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2">Staff Workstation</div>
+
+        <a href="repayments.php" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition <?= $activePage === 'repayments' ? 'bg-emerald-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white' ?>">
+            <i data-lucide="wallet" class="w-4 h-4"></i>
+            <span>Receive & Key In Payment</span>
+        </a>
+
+        <a href="clients.php" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition <?= $activePage === 'clients' ? 'bg-emerald-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white' ?>">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span>Register Client</span>
+        </a>
+
+        <?php else: ?>
+        <!-- ============================================== -->
+        <!-- SUPER ADMIN & EXECUTIVE FULL CONTROL VIEW -->
+        <!-- ============================================== -->
+        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2">Executive Operations</div>
         
         <a href="dashboard.php" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition <?= $activePage === 'dashboard' ? 'bg-emerald-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white' ?>">
             <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
@@ -65,6 +86,7 @@ $isExec = ($role === ROLE_SUPER_ADMIN || $role === ROLE_CEO);
             <i data-lucide="settings" class="w-4 h-4"></i>
             <span>System Settings</span>
         </a>
+        <?php endif; ?>
     </nav>
 
     <!-- Super Admin Active Status -->
@@ -80,3 +102,4 @@ $isExec = ($role === ROLE_SUPER_ADMIN || $role === ROLE_CEO);
         </div>
     </div>
 </aside>
+

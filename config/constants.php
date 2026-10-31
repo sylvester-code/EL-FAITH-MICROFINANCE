@@ -32,3 +32,4 @@ function formatDateTime($datetime) {
     $timestamp = is_numeric($datetime) ? $datetime : strtotime($datetime);
     return date('d M Y, h:i A', $timestamp);
 }
+

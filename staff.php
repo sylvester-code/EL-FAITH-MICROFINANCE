@@ -1,11 +1,13 @@
 <?php
 // EL-FAITH MICROFINANCE - Staff Management & Deletion Controls
 // Restricted to Super Administrator
+require_once __DIR__ . '/config/auth.php';
+requireSuperAdmin();
+
 $activePage = 'staff';
 $pageTitle = 'Staff Management & Workforce';
 
 require_once __DIR__ . '/includes/header.php';
-requireSuperAdmin();
 
 $success = '';
 $error = '';
@@ -295,3 +297,4 @@ $staffList = $staffListStmt->fetchAll();
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
+

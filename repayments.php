@@ -8,6 +8,10 @@ require_once __DIR__ . '/includes/header.php';
 $success = '';
 $error = '';
 
+if (isset($_GET['notice']) && $_GET['notice'] === 'restricted') {
+    $error = 'Access Notice: As a staff officer, your system permissions are strictly designated to Registering Clients and Receiving / Keying In Payments.';
+}
+
 // Handle Keying in Repayment
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['record_repayment'])) {
     $loanId = intval($_POST['loan_id'] ?? 0);
@@ -356,3 +360,4 @@ function updateSelectedLoanInfo() {
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
+

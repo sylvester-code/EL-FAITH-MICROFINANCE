@@ -1,6 +1,9 @@
 <?php
 // EL-FAITH MICROFINANCE - System Settings & Danger Zone
 // 40-Day Emergency Wipeout with Continuous Audio Siren
+require_once __DIR__ . '/config/auth.php';
+requireSuperAdmin();
+
 $activePage = 'settings';
 $pageTitle = 'System Settings & Controls';
 
@@ -214,3 +217,4 @@ function triggerWipeoutSchedule() {
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
+

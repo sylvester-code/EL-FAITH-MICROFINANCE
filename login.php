@@ -59,7 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'branchId' => $user['branchId'] ?? 1,
                     ];
 
-                    header('Location: dashboard.php');
+                    if ($user['role'] === ROLE_SUPER_ADMIN || $user['role'] === ROLE_CEO) {
+                        header('Location: dashboard.php');
+                    } else {
+                        header('Location: repayments.php');
+                    }
                     exit;
                 }
             } else {
@@ -162,3 +166,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </script>
 </body>
 </html>
+

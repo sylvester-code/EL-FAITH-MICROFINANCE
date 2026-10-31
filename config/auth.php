@@ -26,6 +26,18 @@ function isCeoOrSuperAdmin() {
     return $role === ROLE_SUPER_ADMIN || $role === ROLE_CEO;
 }
 
+function isStaffOnly() {
+    return !isCeoOrSuperAdmin();
+}
+
+function requireExecutive() {
+    requireLogin();
+    if (isStaffOnly()) {
+        header('Location: repayments.php?notice=restricted');
+        exit;
+    }
+}
+
 function requireLogin() {
     if (!isLoggedIn()) {
         header('Location: login.php');
@@ -36,13 +48,16 @@ function requireLogin() {
 function requireSuperAdmin() {
     requireLogin();
     if (!isSuperAdmin()) {
-        die('Access Denied: Super Administrator privileges required.');
+        header('Location: repayments.php?notice=admin_required');
+        exit;
     }
 }
 
 function requireCeoOrSuperAdmin() {
     requireLogin();
     if (!isCeoOrSuperAdmin()) {
-        die('Access Denied: Super Administrator or CEO privileges required.');
+        header('Location: repayments.php?notice=restricted');
+        exit;
     }
 }
+

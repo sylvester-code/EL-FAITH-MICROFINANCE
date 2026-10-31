@@ -1,6 +1,9 @@
 <?php
 // EL-FAITH MICROFINANCE - Loan Applications & Super Admin Approval
 // Super Admin determines and authorizes the loan amounts
+require_once __DIR__ . '/config/auth.php';
+requireExecutive();
+
 $activePage = 'loans';
 $pageTitle = 'Loan Applications & Approvals';
 
@@ -40,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['review_application'])
                     $rate = floatval($app['defaultInterestRate'] ?: 10.00);
                     $termMonths = intval($app['requestedTermMonths']) ?: 6;
                     $method = $app['interestMethod'] ?: 'FLAT_RATE';
-                    $freq = $app['repaymentFrequency'] ?: 'WEEKLY';
+                    $freq = 'DAILY';
 
                     // Interest calculation
                     $totalInterest = round($principal * ($rate / 100) * ($termMonths / 12), 2);
@@ -413,3 +416,4 @@ function openReviewModal(app) {
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
+

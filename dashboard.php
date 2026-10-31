@@ -1,5 +1,8 @@
 <?php
 // EL-FAITH MICROFINANCE - Executive & Operational Dashboard
+require_once __DIR__ . '/config/auth.php';
+requireExecutive();
+
 $activePage = 'dashboard';
 $pageTitle = 'Executive Financial Dashboard';
 
@@ -401,3 +404,4 @@ $recentRepayments = $recentRepaymentsStmt->fetchAll();
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
+

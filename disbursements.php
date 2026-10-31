@@ -1,6 +1,9 @@
 <?php
 // EL-FAITH MICROFINANCE - Loan Disbursements Desk
 // Enforces Super Admin Allocation Ceiling & 1-Week (7 Days) Repayment Start Date
+require_once __DIR__ . '/config/auth.php';
+requireExecutive();
+
 $activePage = 'disbursements';
 $pageTitle = 'Loan Disbursements Desk';
 
@@ -88,10 +91,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['disburse_loan'])) {
                         $notes ?: 'Disbursement completed. First repayment scheduled in 7 days.'
                     ]);
 
-                    // 2. Generate Installment Schedule (Starting 1 week after disbursement)
-                    $frequency = $loan['repaymentFrequency'] ?: 'WEEKLY';
+                    // 2. Generate Daily Installment Schedule (Starting 1 week after disbursement)
+                    $frequency = 'DAILY';
                     $totalRepayable = floatval($loan['totalScheduledRepayment']);
-                    $installmentCount = ($frequency === 'WEEKLY') ? max(1, $termMonths * 4) : max(1, $termMonths);
+                    $installmentCount = max(1, $termMonths * 30); // Standard daily installments
                     $installmentAmount = round($totalRepayable / $installmentCount, 2);
 
                     $scheduleDate = clone $firstInstallmentDate;
@@ -114,13 +117,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['disburse_loan'])) {
                             $installmentAmount
                         ]);
 
-                        // Next schedule date
-                        if ($frequency === 'WEEKLY') {
-                            $scheduleDate->modify('+7 days');
-                        } else {
-                            $scheduleDate->modify('+1 month');
-                        }
+                        // Next schedule date advances DAILY (+1 day)
+                        $scheduleDate->modify('+1 day');
                     }
+
+                    $maturityDate = clone $scheduleDate;
 
                     // 3. Update Loan to DISBURSED / ACTIVE
                     $updLoan = $pdo->prepare("
@@ -196,9 +197,9 @@ $recentDisbursements = $recentDisbursementsStmt->fetchAll();
         <i data-lucide="calendar-clock" class="w-5 h-5"></i>
     </div>
     <div>
-        <div class="text-sm font-bold text-emerald-950">1-Week Repayment Grace Period Active</div>
+        <div class="text-sm font-bold text-emerald-950">Daily Repayment Policy & 1-Week Grace Buffer</div>
         <div class="text-xs text-emerald-800 mt-0.5">
-            By system policy, the first installment repayment date for every loan automatically commences <strong>exactly 1 week (7 days)</strong> after the disbursement date. All loan sums are verified against the Super Admin's lending capital allocation ceiling.
+            By system policy, the repayment frequency for all loans is <strong>DAILY</strong>. The first installment repayment date automatically commences <strong>exactly 1 week (7 days)</strong> after the disbursement date, followed by daily installments. All loan sums are verified against the Super Admin's lending capital allocation ceiling.
         </div>
     </div>
 </div>
@@ -335,3 +336,4 @@ $recentDisbursements = $recentDisbursementsStmt->fetchAll();
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
+

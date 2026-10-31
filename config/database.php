@@ -22,3 +22,4 @@ try {
 } catch (PDOException $e) {
     die("Database Connection Error: " . htmlspecialchars($e->getMessage()));
 }
+

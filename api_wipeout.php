@@ -72,3 +72,4 @@ if ($action === 'schedule') {
 }
 
 echo json_encode(['success' => false, 'message' => 'Invalid action']);
+
