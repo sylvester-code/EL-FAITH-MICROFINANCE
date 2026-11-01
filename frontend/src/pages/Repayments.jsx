@@ -11,6 +11,7 @@ import {
   Calendar,
   DollarSign,
   FileText,
+  Printer,
 } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { StatusBadge } from '../components/Badge';
@@ -28,6 +29,7 @@ export const Repayments = () => {
   const [recordModalOpen, setRecordModalOpen] = useState(false);
   const [reversalModalOpen, setReversalModalOpen] = useState(false);
   const [selectedRepayment, setSelectedRepayment] = useState(null);
+  const [viewingReceipt, setViewingReceipt] = useState(null);
 
   // Form State
   const [paymentForm, setPaymentForm] = useState({
@@ -333,6 +335,13 @@ export const Repayments = () => {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-right space-x-2">
+                      <button
+                        onClick={() => setViewingReceipt(r)}
+                        title="View & Print Official Receipt"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg font-bold transition-colors text-[11px] border border-emerald-200"
+                      >
+                        <Printer className="w-3 h-3" /> Receipt
+                      </button>
                       {r.receiptPdfUrl && (
                         <a
                           href={r.receiptPdfUrl}
@@ -562,6 +571,108 @@ export const Repayments = () => {
               </button>
             </div>
           </form>
+        )}
+      </Modal>
+
+      {/* Official Receipt Viewer Modal */}
+      <Modal
+        isOpen={!!viewingReceipt}
+        onClose={() => setViewingReceipt(null)}
+        title="Official Loan Repayment Receipt"
+      >
+        {viewingReceipt && (
+          <div className="space-y-4 text-xs">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                <div>
+                  <h4 className="font-extrabold text-navy-950 text-sm">EL-FAITH MICROFINANCE</h4>
+                  <p className="text-[10px] text-slate-500">Wassa Powuako, Western Region, Ghana</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    Official Cash Voucher
+                  </span>
+                  <div className="font-mono font-bold text-slate-900 mt-0.5">{viewingReceipt.receiptNumber}</div>
+                </div>
+              </div>
+
+              {/* Customer details */}
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Customer Name</span>
+                  <strong className="text-slate-900">{viewingReceipt.client?.fullName}</strong>
+                  <div className="text-slate-500 font-mono text-[10px]">{viewingReceipt.client?.clientId} • {viewingReceipt.client?.phone}</div>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Loan Account</span>
+                  <strong className="text-brand-700 font-mono">{viewingReceipt.loan?.loanAccountNumber}</strong>
+                  <div className="text-slate-500 text-[10px]">{viewingReceipt.client?.communityTown || 'Wassa Powuako'}</div>
+                </div>
+              </div>
+
+              {/* Payment Details */}
+              <div className="border-t border-slate-200 pt-2 space-y-1 text-[11px]">
+                <div className="flex justify-between text-slate-600">
+                  <span>Payment Date & Time:</span>
+                  <strong className="text-slate-900">
+                    {new Date(viewingReceipt.paymentDate).toLocaleDateString('en-GB')} at {new Date(viewingReceipt.paymentDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </strong>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Payment Method:</span>
+                  <strong className="text-slate-900">{viewingReceipt.paymentMethod}</strong>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Principal Recovered:</span>
+                  <span>GH₵ {Number(viewingReceipt.principalComponent).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Interest Paid:</span>
+                  <span>GH₵ {Number(viewingReceipt.interestComponent).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-slate-200 font-black text-sm text-emerald-700">
+                  <span>TOTAL AMOUNT PAID:</span>
+                  <span>GH₵ {Number(viewingReceipt.amountPaid).toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Remaining Balance Highlight */}
+              <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl p-3 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Remaining Loan Balance</span>
+                  <div className="text-lg font-black text-yellow-400">
+                    GH₵ {Number(viewingReceipt.outstandingBalanceAfter).toFixed(2)}
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+                  {Number(viewingReceipt.outstandingBalanceAfter) <= 0.01 ? 'FULLY PAID' : 'ACTIVE'}
+                </span>
+              </div>
+
+              <div className="text-[10px] text-slate-400 pt-1 flex justify-between">
+                <span>Received by: {viewingReceipt.cashier?.staffProfile?.fullName || viewingReceipt.cashier?.username} ({viewingReceipt.cashier?.staffId || 'STAFF'})</span>
+                <span className="font-mono">Stamp: AUTHORIZED</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setViewingReceipt(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md"
+              >
+                <Printer className="w-4 h-4" />
+                Print Receipt
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
     </div>

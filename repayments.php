@@ -111,7 +111,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['record_repayment'])) 
                 ]);
 
                 $pdo->commit();
-                $success = "Repayment of " . formatCurrency($amountPaid) . " successfully recorded for {$loan['clientName']}. Receipt: {$receiptNumber}";
+                $newReceiptNumber = $receiptNumber;
+                $newReceiptRemaining = $newTotalOutstanding;
+                $newReceiptAmount = $amountPaid;
+                $newReceiptClient = $loan['clientName'];
+                $success = "Repayment of " . formatCurrency($amountPaid) . " successfully recorded for {$loan['clientName']}.";
             } catch (Exception $e) {
                 $pdo->rollBack();
                 $error = "Error recording repayment: " . $e->getMessage();
@@ -194,9 +198,27 @@ $allRepayments = $repaymentsStmt->fetchAll();
 
 <!-- Status Alerts -->
 <?php if ($success): ?>
-<div class="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center space-x-2">
-    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
-    <span><?= htmlspecialchars($success) ?></span>
+<div class="mb-6 p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="flex items-center space-x-3">
+        <div class="p-2 bg-emerald-600 text-white rounded-xl shadow-md">
+            <i data-lucide="check" class="w-5 h-5"></i>
+        </div>
+        <div>
+            <div class="font-black text-sm"><?= htmlspecialchars($success) ?></div>
+            <?php if (!empty($newReceiptNumber)): ?>
+            <div class="text-xs text-emerald-800 font-semibold mt-0.5">
+                Receipt #<span class="font-mono font-bold"><?= htmlspecialchars($newReceiptNumber) ?></span>
+                &bull; Remaining Loan Balance: <strong class="text-emerald-950 underline"><?= formatCurrency($newReceiptRemaining) ?></strong>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php if (!empty($newReceiptNumber)): ?>
+    <a href="receipt.php?receipt_no=<?= urlencode($newReceiptNumber) ?>" target="_blank" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition flex items-center space-x-2 self-start sm:self-auto">
+        <i data-lucide="printer" class="w-4 h-4"></i>
+        <span>Print & View Official Receipt</span>
+    </a>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 
@@ -318,8 +340,12 @@ $allRepayments = $repaymentsStmt->fetchAll();
                             <?= htmlspecialchars(str_replace('_', ' ', $mr['paymentMethod'])) ?>
                         </span>
                     </td>
-                    <td class="py-3.5 text-right font-mono text-xs text-slate-500 font-bold">
-                        <?= htmlspecialchars($mr['receiptNumber']) ?>
+                    <td class="py-3.5 text-right flex items-center justify-end gap-2">
+                        <span class="font-mono text-xs text-slate-500 font-bold"><?= htmlspecialchars($mr['receiptNumber']) ?></span>
+                        <a href="receipt.php?receipt_no=<?= urlencode($mr['receiptNumber']) ?>" target="_blank" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs rounded-lg transition border border-emerald-200 flex items-center gap-1" title="View & Print Receipt">
+                            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                            <span>Receipt</span>
+                        </a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -390,8 +416,12 @@ $allRepayments = $repaymentsStmt->fetchAll();
                             <?= htmlspecialchars($r['clientTown'] ?? 'Wassa Powuako') ?>
                         </span>
                     </td>
-                    <td class="py-3 text-right font-mono text-xs text-slate-500">
-                        <?= htmlspecialchars($r['receiptNumber']) ?>
+                    <td class="py-3 text-right flex items-center justify-end gap-2">
+                        <span class="font-mono text-xs text-slate-500"><?= htmlspecialchars($r['receiptNumber']) ?></span>
+                        <a href="receipt.php?receipt_no=<?= urlencode($r['receiptNumber']) ?>" target="_blank" class="px-2.5 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 font-bold text-xs rounded-lg transition border border-slate-200 flex items-center gap-1" title="View & Print Official Receipt">
+                            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                            <span>Receipt</span>
+                        </a>
                     </td>
                 </tr>
                 <?php endforeach; ?>

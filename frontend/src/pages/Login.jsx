@@ -4,8 +4,8 @@ import { Landmark, Lock, User, ArrowRight, ShieldCheck, AlertCircle } from 'luci
 import { useAuth } from '../context/AuthContext';
 
 export const Login = () => {
-  const [username, setUsername] = useState('ELIJAH');
-  const [password, setPassword] = useState('APPIAH');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -29,12 +29,6 @@ export const Login = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const setSuperAdminCredentials = () => {
-    setUsername('ELIJAH');
-    setPassword('APPIAH');
-    setError('');
   };
 
   return (
@@ -130,31 +124,9 @@ export const Login = () => {
             </button>
           </form>
 
-          {/* Super Admin Quick Credentials Box */}
-          <div className="mt-6 pt-5 border-t border-slate-200">
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-navy-950 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  Super Administrator
-                </span>
-                <span className="text-[10px] font-bold text-slate-500">ELIJAH APPIAH</span>
-              </div>
-              <p className="text-[11px] text-slate-600">
-                Username: <strong className="text-slate-900 font-mono">ELIJAH</strong> | Password: <strong className="text-slate-900 font-mono">APPIAH</strong>
-              </p>
-              <button
-                type="button"
-                onClick={setSuperAdminCredentials}
-                className="w-full py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-bold text-xs shadow-sm transition-colors"
-              >
-                Auto-Fill Super Admin Credentials
-              </button>
-            </div>
-            <p className="mt-3 text-[10px] text-slate-400 text-center">
-              Staff workers log in with the usernames and passwords created by Super Admin ELIJAH APPIAH.
-            </p>
-          </div>
+          <p className="mt-6 text-[10px] text-slate-400 text-center">
+            Authorized personnel only. Contact Executive Management for login credentials.
+          </p>
         </div>
       </div>
     </div>

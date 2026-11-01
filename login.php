@@ -138,18 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
             </form>
-
-            <!-- Quick Auto-Fill Card for Testing -->
-            <div class="mt-6 pt-5 border-t border-slate-100">
-                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Quick Sign-In Credentials</div>
-                <button type="button" onclick="fillSuperAdmin()" class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 transition text-left flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-bold text-slate-800">Super Administrator</div>
-                        <div class="text-[10px] text-slate-500">Username: <strong class="text-slate-700">ELIJAH</strong> &bull; Password: <strong class="text-slate-700">APPIAH</strong></div>
-                    </div>
-                    <span class="text-xs font-bold text-emerald-600 flex items-center gap-1">Auto-fill &rarr;</span>
-                </button>
-            </div>
         </div>
 
         <div class="text-center mt-6 text-xs text-slate-500">
@@ -159,10 +147,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script>
         lucide.createIcons();
-        function fillSuperAdmin() {
-            document.getElementById('identifier').value = 'ELIJAH';
-            document.getElementById('password').value = 'APPIAH';
-        }
     </script>
 </body>
 </html>
