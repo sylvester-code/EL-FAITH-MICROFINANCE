@@ -53,10 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['review_application'])
                     $updApp = $pdo->prepare("
                         UPDATE loanapplication SET 
                             status = 'APPROVED',
-                            finalApprovedAmount = ?,
-                            approvalNotes = ?,
-                            reviewedByUserId = ?,
-                            reviewedAt = NOW(3),
+                            approvedAmount = ?,
+                            notes = ?,
+                            approvedByUserId = ?,
+                            approvedAt = NOW(3),
                             updatedAt = NOW(3)
                         WHERE id = ?
                     ");
@@ -137,11 +137,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_application'])
         try {
             $stmt = $pdo->prepare("
                 INSERT INTO loanapplication (
-                    applicationNumber, clientId, productId, branchId, requestedAmount,
-                    requestedTermMonths, loanPurpose, status, createdByUserId, createdAt, updatedAt
+                    applicationNumber, clientId, productId, requestedAmount,
+                    repaymentPeriodMonths, repaymentFrequency, proposedInterestRate,
+                    monthlyIncome, purpose, status, createdByUserId, createdAt, updatedAt
                 ) VALUES (
-                    ?, ?, ?, 1, ?,
-                    ?, ?, 'SUBMITTED', ?, NOW(3), NOW(3)
+                    ?, ?, ?, ?,
+                    ?, 'DAILY', 10.00,
+                    1500.00, ?, 'SUBMITTED', ?, NOW(3), NOW(3)
                 )
             ");
             $stmt->execute([$appNo, $clientId, $productId, $amount, $term, $purpose, $user['id']]);

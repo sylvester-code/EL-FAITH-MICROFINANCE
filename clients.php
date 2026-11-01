@@ -56,6 +56,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register_client'])) {
     }
 }
 
+// Handle Client Deletion (Restricted to Super Admin)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_client'])) {
+    if (!isSuperAdmin()) {
+        $error = 'Access Denied: Only Super Administrator can permanently delete a client.';
+    } else {
+        $targetClientId = intval($_POST['client_id'] ?? 0);
+        if ($targetClientId <= 0) {
+            $error = 'Invalid client selected for deletion.';
+        } else {
+            $clStmt = $pdo->prepare("SELECT * FROM client WHERE id = ?");
+            $clStmt->execute([$targetClientId]);
+            $targetClient = $clStmt->fetch();
+
+            if (!$targetClient) {
+                $error = 'Client not found.';
+            } else {
+                try {
+                    $pdo->beginTransaction();
+
+                    // 1. Identify all loans for this client
+                    $loanIdsStmt = $pdo->prepare("SELECT id FROM loan WHERE clientId = ?");
+                    $loanIdsStmt->execute([$targetClientId]);
+                    $loanIds = $loanIdsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                    if (!empty($loanIds)) {
+                        $placeholders = implode(',', array_fill(0, count($loanIds), '?'));
+                        // Delete repaymentschedules
+                        $pdo->prepare("DELETE FROM repaymentschedule WHERE loanId IN ($placeholders)")->execute($loanIds);
+                        // Delete loandisbursements
+                        $pdo->prepare("DELETE FROM loandisbursement WHERE loanId IN ($placeholders)")->execute($loanIds);
+                        // Delete repayments for these loans
+                        $pdo->prepare("DELETE FROM repayment WHERE loanId IN ($placeholders)")->execute($loanIds);
+                        // Delete loans
+                        $pdo->prepare("DELETE FROM loan WHERE id IN ($placeholders)")->execute($loanIds);
+                    }
+
+                    // 2. Identify all loan applications for this client
+                    $appIdsStmt = $pdo->prepare("SELECT id FROM loanapplication WHERE clientId = ?");
+                    $appIdsStmt->execute([$targetClientId]);
+                    $appIds = $appIdsStmt->fetchAll(PDO::FETCH_COLUMN);
+                    if (!empty($appIds)) {
+                        $appPlaceholders = implode(',', array_fill(0, count($appIds), '?'));
+                        $pdo->prepare("DELETE FROM loanapplicationreview WHERE applicationId IN ($appPlaceholders)")->execute($appIds);
+                        $pdo->prepare("DELETE FROM loanapplication WHERE id IN ($appPlaceholders)")->execute($appIds);
+                    }
+
+                    // 3. Delete any remaining repayments by clientId
+                    $pdo->prepare("DELETE FROM repayment WHERE clientId = ?")->execute([$targetClientId]);
+
+                    // 4. Delete related complaints, followups, and guarantors
+                    $pdo->prepare("DELETE FROM clientcomplaint WHERE clientId = ?")->execute([$targetClientId]);
+                    $pdo->prepare("DELETE FROM followupactivity WHERE clientId = ?")->execute([$targetClientId]);
+                    $pdo->prepare("DELETE FROM guarantor WHERE clientId = ?")->execute([$targetClientId]);
+
+                    // 5. Delete Client Profile
+                    $pdo->prepare("DELETE FROM client WHERE id = ?")->execute([$targetClientId]);
+
+                    $pdo->commit();
+                    $success = "Client '{$targetClient['fullName']}' ({$targetClient['clientId']}) has been permanently deleted by Super Administrator.";
+                } catch (Exception $e) {
+                    $pdo->rollBack();
+                    $error = "Error deleting client: " . $e->getMessage();
+                }
+            }
+        }
+    }
+}
+
 // Fetch Clients
 $search = trim($_GET['search'] ?? '');
 if (!empty($search)) {
@@ -154,6 +222,9 @@ if (!empty($search)) {
                     <th class="pb-3">Occupation</th>
                     <th class="pb-3">Active Loans</th>
                     <th class="pb-3 text-right">Registered</th>
+                    <?php if (isSuperAdmin()): ?>
+                    <th class="pb-3 text-right">Super Admin Action</th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -183,6 +254,17 @@ if (!empty($search)) {
                         <?php endif; ?>
                     </td>
                     <td class="py-3 text-right text-xs text-slate-400"><?= formatDate($c['createdAt']) ?></td>
+                    <?php if (isSuperAdmin()): ?>
+                    <td class="py-3 text-right">
+                        <form method="POST" action="clients.php" onsubmit="return confirm('WARNING: Are you sure you want to permanently delete client <?= htmlspecialchars($c['fullName']) ?> (<?= $c['clientId'] ?>)? All loan history will be removed. This cannot be undone.');" class="inline">
+                            <input type="hidden" name="delete_client" value="1">
+                            <input type="hidden" name="client_id" value="<?= $c['id'] ?>">
+                            <button type="submit" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition" title="Delete Client Profile">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </td>
+                    <?php endif; ?>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
