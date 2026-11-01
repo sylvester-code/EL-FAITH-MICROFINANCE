@@ -38,6 +38,7 @@ app.use(cors({
       origin.includes('127.0.0.1') ||
       origin.includes('vercel.app') ||
       origin.includes('onrender.com') ||
+      (process.env.FRONTEND_URL && (origin === process.env.FRONTEND_URL || origin.startsWith(process.env.FRONTEND_URL))) ||
       (process.env.CLIENT_ORIGIN && origin === process.env.CLIENT_ORIGIN)
     ) {
       return callback(null, true);

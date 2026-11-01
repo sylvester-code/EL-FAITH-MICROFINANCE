@@ -195,31 +195,31 @@ export const AppLayout = ({ children }) => {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar Desktop - Static & Pinned */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-navy-950 text-slate-300 shrink-0 border-r border-navy-900 sticky top-0 h-screen z-30">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-slate-900 text-slate-300 shrink-0 border-r border-slate-800 sticky top-0 h-screen z-30">
         {/* Brand Header */}
-        <div className="h-20 flex items-center px-6 gap-3 border-b border-navy-900/80 bg-navy-950">
-          <div className="w-10 h-10 rounded-xl bg-brand-700 flex items-center justify-center text-white shadow-md">
-            <Landmark className="w-6 h-6 text-gold-400" />
+        <div className="p-6 border-b border-slate-800 flex items-center space-x-3 bg-slate-900">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500 text-slate-950 flex items-center justify-center font-black text-xl shadow-lg select-none">
+            EF
           </div>
           <div>
-            <h1 className="text-base font-extrabold text-white tracking-tight leading-tight">
-              EL-FAITH <span className="text-brand-400">FINANCE</span>
+            <h1 className="font-extrabold text-white text-base tracking-tight leading-none">
+              EL-FAITH <span className="text-emerald-400">MICROFINANCE</span>
             </h1>
-            <p className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase">
-              Wassa Powuako Branch
+            <p className="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider mt-1">
+              Wassa Powuako, Ghana
             </p>
           </div>
         </div>
 
         {/* User Card */}
-        <div className="p-4 mx-3 my-3 bg-navy-900/60 rounded-xl border border-navy-800">
+        <div className="p-4 mx-3 my-3 bg-slate-800/80 rounded-xl border border-slate-700/60">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-brand-800 flex items-center justify-center font-bold text-white text-sm">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500 text-slate-950 flex items-center justify-center font-black text-sm shadow">
               {user?.fullName?.charAt(0) || user?.username?.charAt(0) || 'E'}
             </div>
             <div className="overflow-hidden">
               <p className="text-xs font-bold text-white truncate">{user?.fullName || user?.username}</p>
-              <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full border mt-0.5 ${roleColors[user?.role] || 'bg-slate-800 text-slate-300'}`}>
+              <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mt-0.5">
                 {user?.role?.replace('_', ' ')}
               </span>
             </div>
@@ -227,8 +227,10 @@ export const AppLayout = ({ children }) => {
         </div>
 
         {/* Nav Links */}
-        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
-          <p className="px-3 text-[10px] font-bold tracking-wider uppercase text-slate-500 mb-2">Management Controls</p>
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5">
+          <p className="px-2 text-[10px] font-bold tracking-wider uppercase text-slate-500 mb-2">
+            {isExecutive ? 'Executive Operations' : 'Staff Workstation'}
+          </p>
           {navLinks.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -236,13 +238,13 @@ export const AppLayout = ({ children }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30'
-                    : 'text-slate-400 hover:text-white hover:bg-navy-900/80'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-gold-400' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -250,10 +252,10 @@ export const AppLayout = ({ children }) => {
         </div>
 
         {/* Footer Logout */}
-        <div className="p-4 border-t border-navy-900">
+        <div className="p-4 border-t border-slate-800">
           <button
             onClick={logout}
-            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition-colors"
+            className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             <span>Sign Out Session</span>
@@ -264,31 +266,36 @@ export const AppLayout = ({ children }) => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navbar */}
-        <header className="h-20 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30">
-          <div className="flex items-center gap-4">
+        <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="lg:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-              <Building className="w-4 h-4 text-brand-600" />
-              <span>EL-FAITH MICROFINANCE — Wassa Powuako, Western Region, Ghana</span>
-            </div>
+            <span className="text-xs font-bold px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full hidden sm:inline-flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+              Wassa Powuako Branch
+            </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-xs font-bold text-slate-900">{user?.fullName}</p>
-              <span className="text-[10px] text-slate-500 font-semibold">{user?.staffId || user?.role}</span>
+              <p className="text-xs font-black text-slate-900 leading-tight">{user?.fullName || user?.username}</p>
+              <p className="text-[10px] text-slate-500 font-bold">
+                {user?.role?.replace('_', ' ')} {user?.staffId ? `(${user.staffId})` : ''}
+              </p>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-emerald-500 text-slate-950 font-black flex items-center justify-center text-sm shadow select-none">
+              {user?.fullName?.charAt(0) || user?.username?.charAt(0) || 'E'}
             </div>
             <button
               onClick={logout}
               title="Sign Out"
-              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors ml-1"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </header>
@@ -346,22 +353,30 @@ export const AppLayout = ({ children }) => {
         {sidebarOpen && (
           <div className="fixed inset-0 z-50 lg:hidden">
             <div className="fixed inset-0 bg-slate-900/60" onClick={() => setSidebarOpen(false)} />
-            <div className="fixed inset-y-0 left-0 w-64 bg-navy-950 text-white flex flex-col p-4 shadow-xl">
-              <div className="flex items-center justify-between pb-4 border-b border-navy-900">
-                <span className="font-bold text-brand-400">EL-FAITH MANAGEMENT</span>
-                <button onClick={() => setSidebarOpen(false)} className="p-1 text-slate-400">
-                  <X className="w-6 h-6" />
+            <div className="fixed inset-y-0 left-0 w-64 bg-slate-900 text-white flex flex-col p-4 shadow-xl">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 font-black flex items-center justify-center text-sm shadow">
+                    EF
+                  </div>
+                  <span className="font-bold text-white text-sm">EL-FAITH MICROFINANCE</span>
+                </div>
+                <button onClick={() => setSidebarOpen(false)} className="p-1 text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto py-4 space-y-1">
                 {navLinks.map((item) => {
                   const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
                   return (
                     <Link
                       key={item.path}
                       to={item.path}
                       onClick={() => setSidebarOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-300 hover:bg-navy-900"
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold ${
+                        isActive ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'
+                      }`}
                     >
                       <Icon className="w-4 h-4" />
                       <span>{item.label}</span>
@@ -371,7 +386,7 @@ export const AppLayout = ({ children }) => {
               </div>
               <button
                 onClick={logout}
-                className="flex items-center gap-2 p-2 text-rose-400 text-sm font-bold border-t border-navy-900 pt-4"
+                className="flex items-center gap-2 p-2.5 text-rose-400 text-xs font-bold border-t border-slate-800 pt-4"
               >
                 <LogOut className="w-4 h-4" /> Sign Out
               </button>
