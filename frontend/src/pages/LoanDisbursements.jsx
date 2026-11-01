@@ -30,6 +30,7 @@ export const LoanDisbursements = () => {
     destinationAccount: '',
     transactionReference: '',
     cashAccountId: '',
+    firstRepaymentDate: new Date().toISOString().split('T')[0],
     notes: '',
   });
 
@@ -67,6 +68,8 @@ export const LoanDisbursements = () => {
     setErrorMsg('');
     setVoucherUrl(null);
 
+    const todayStr = new Date().toISOString().split('T')[0];
+
     // Fetch calculation preview
     try {
       const prev = await api.post('/loans/preview-calc', {
@@ -74,7 +77,8 @@ export const LoanDisbursements = () => {
         interestRate: app.proposedInterestRate,
         interestMethod: app.product.interestMethod,
         termMonths: app.repaymentPeriodMonths,
-        repaymentFrequency: app.repaymentFrequency,
+        repaymentFrequency: 'DAILY',
+        firstRepaymentDate: todayStr,
         processingFeeRate: app.product.processingFeeRate,
         insuranceFeeRate: app.product.insuranceFeeRate,
       });
@@ -90,6 +94,7 @@ export const LoanDisbursements = () => {
       destinationAccount: app.client.phone || '',
       transactionReference: `CASH-DISB-${Date.now().toString().slice(-6)}`,
       cashAccountId: cashAccounts[0]?.id || '',
+      firstRepaymentDate: todayStr,
       notes: 'Disbursement authorized and funds handed over at counter.',
     });
     setDisburseModalOpen(true);
@@ -107,6 +112,7 @@ export const LoanDisbursements = () => {
         destinationAccount: disburseForm.destinationAccount,
         transactionReference: disburseForm.transactionReference,
         cashAccountId: disburseForm.cashAccountId,
+        firstRepaymentDate: disburseForm.firstRepaymentDate,
         notes: disburseForm.notes,
       };
 
@@ -328,6 +334,61 @@ export const LoanDisbursements = () => {
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none font-mono"
                   />
                 </div>
+              </div>
+
+              {/* Repayment Start Date & Automatic Daily Scheduling */}
+              <div className="p-3.5 bg-emerald-50/80 rounded-xl border border-emerald-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-emerald-950">
+                    First Repayment Start Date (Daily Frequency) *
+                  </label>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    Daily Schedule Auto-Generated
+                  </span>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 items-center">
+                  <input
+                    type="date"
+                    required
+                    value={disburseForm.firstRepaymentDate}
+                    onChange={(e) => setDisburseForm({ ...disburseForm, firstRepaymentDate: e.target.value })}
+                    className="w-full sm:w-1/2 px-3 py-2 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+                  />
+                  <div className="flex gap-1.5 w-full sm:w-1/2">
+                    <button
+                      type="button"
+                      onClick={() => setDisburseForm({ ...disburseForm, firstRepaymentDate: new Date().toISOString().split('T')[0] })}
+                      className="px-2.5 py-1.5 bg-white hover:bg-emerald-100 border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-800 transition shadow-xs flex-1"
+                    >
+                      Today (Disbursement)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 1);
+                        setDisburseForm({ ...disburseForm, firstRepaymentDate: d.toISOString().split('T')[0] });
+                      }}
+                      className="px-2.5 py-1.5 bg-white hover:bg-emerald-100 border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-800 transition shadow-xs flex-1"
+                    >
+                      Tomorrow (+1d)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 7);
+                        setDisburseForm({ ...disburseForm, firstRepaymentDate: d.toISOString().split('T')[0] });
+                      }}
+                      className="px-2.5 py-1.5 bg-white hover:bg-emerald-100 border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-800 transition shadow-xs flex-1"
+                    >
+                      +7 Days
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[10px] text-emerald-700 leading-relaxed">
+                  The first installment will be due on <strong>{disburseForm.firstRepaymentDate || 'selected date'}</strong>. The system will automatically schedule all subsequent installments daily (+1 day).
+                </p>
               </div>
 
               <div>

@@ -53,8 +53,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['disburse_loan'])) {
 
                     $disbDate = new DateTime();
                     
-                    // Repayment Schedule starts exactly 1 WEEK (7 DAYS) after disbursement!
-                    $firstInstallmentDate = (clone $disbDate)->modify('+7 days');
+                    // Repayment start date: Starts on the disbursement date OR custom date set by Super Admin
+                    $firstDateInput = trim($_POST['first_repayment_date'] ?? '');
+                    if (!empty($firstDateInput)) {
+                        $firstInstallmentDate = new DateTime($firstDateInput);
+                    } else {
+                        // Default: starts from the day the loans were disbursed
+                        $firstInstallmentDate = clone $disbDate;
+                    }
 
                     // Calculate maturity date based on term
                     $termMonths = intval($loan['termMonths']) ?: 6;
@@ -88,10 +94,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['disburse_loan'])) {
                         $user['id'],
                         $user['id'],
                         $user['id'],
-                        $notes ?: 'Disbursement completed. First repayment scheduled in 7 days.'
+                        $notes ?: ('Disbursement completed. First daily repayment scheduled for ' . $firstInstallmentDate->format('d M Y'))
                     ]);
 
-                    // 2. Generate Daily Installment Schedule (Starting 1 week after disbursement)
+                    // 2. Generate Daily Installment Schedule (Starting from disbursement date or custom Super Admin date)
                     $frequency = 'DAILY';
                     $totalRepayable = floatval($loan['totalScheduledRepayment']);
                     $installmentCount = max(1, $termMonths * 30); // Standard daily installments
@@ -117,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['disburse_loan'])) {
                             $installmentAmount
                         ]);
 
-                        // Next schedule date advances DAILY (+1 day)
+                        // Automatically advances DAILY (+1 day)
                         $scheduleDate->modify('+1 day');
                     }
 
@@ -191,15 +197,15 @@ $recentDisbursements = $recentDisbursementsStmt->fetchAll();
 </div>
 <?php endif; ?>
 
-<!-- Top Info Banner: 1-Week Scheduling Rule -->
+<!-- Top Info Banner: Daily Repayment Policy & Super Admin Control -->
 <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-6 flex items-start space-x-3">
     <div class="p-2 bg-emerald-100 rounded-xl text-emerald-700 mt-0.5">
         <i data-lucide="calendar-clock" class="w-5 h-5"></i>
     </div>
     <div>
-        <div class="text-sm font-bold text-emerald-950">Daily Repayment Policy & 1-Week Grace Buffer</div>
+        <div class="text-sm font-bold text-emerald-950">Daily Repayment Schedule System</div>
         <div class="text-xs text-emerald-800 mt-0.5">
-            By system policy, the repayment frequency for all loans is <strong>DAILY</strong>. The first installment repayment date automatically commences <strong>exactly 1 week (7 days)</strong> after the disbursement date, followed by daily installments. All loan sums are verified against the Super Admin's lending capital allocation ceiling.
+            By system policy, the repayment frequency for all loans is <strong>DAILY</strong>. The repayment start date defaults to <strong>the day the loan is disbursed</strong> or <strong>can be set to any custom date by the Super Admin</strong>. The system will then automatically calculate and generate all daily repayment installment dates.
         </div>
     </div>
 </div>
@@ -214,7 +220,7 @@ $recentDisbursements = $recentDisbursementsStmt->fetchAll();
                 <i data-lucide="badge-dollar-sign" class="w-5 h-5 text-emerald-600"></i>
                 <span>Loans Awaiting Fund Disbursement</span>
             </h3>
-            <p class="text-xs text-slate-500">Approved applications ready to be funded and scheduled</p>
+            <p class="text-xs text-slate-500">Super Admin disbursement desk with custom daily repayment start date selection</p>
         </div>
         <span class="text-xs font-bold px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full">
             <?= count($pendingLoans) ?> Ready
@@ -233,14 +239,14 @@ $recentDisbursements = $recentDisbursementsStmt->fetchAll();
                     <th class="pb-3">Account / Client</th>
                     <th class="pb-3">Loan Product</th>
                     <th class="pb-3">Term & Frequency</th>
-                    <th class="pb-3">First Due Date</th>
+                    <th class="pb-3">First Due Date (Daily)</th>
                     <th class="pb-3 text-right">Approved Principal</th>
                     <th class="pb-3 text-right">Action</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
                 <?php foreach ($pendingLoans as $pl): 
-                    $previewFirstDue = date('d M Y', strtotime('+7 days'));
+                    $todayDate = date('Y-m-d');
                 ?>
                 <tr class="hover:bg-slate-50 transition">
                     <td class="py-3">
@@ -249,18 +255,19 @@ $recentDisbursements = $recentDisbursementsStmt->fetchAll();
                     </td>
                     <td class="py-3 font-semibold text-slate-700"><?= htmlspecialchars($pl['productName']) ?></td>
                     <td class="py-3 text-xs text-slate-600">
-                        <?= $pl['termMonths'] ?> Months &bull; <?= htmlspecialchars($pl['repaymentFrequency']) ?>
+                        <?= $pl['termMonths'] ?> Months &bull; <span class="font-bold text-emerald-700">DAILY</span>
                     </td>
                     <td class="py-3">
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                            <?= $previewFirstDue ?> (+7 days)
-                        </span>
+                        <div class="flex items-center gap-1.5">
+                            <input type="date" form="disbForm_<?= $pl['id'] ?>" name="first_repayment_date" value="<?= $todayDate ?>" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                            <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">Daily auto-schedule</span>
+                        </div>
                     </td>
                     <td class="py-3 text-right font-black text-slate-900 text-base">
                         <?= formatCurrency($pl['principalAmount']) ?>
                     </td>
                     <td class="py-3 text-right">
-                        <form method="POST" action="disbursements.php" onsubmit="return confirm('Confirm disbursement of <?= formatCurrency($pl['principalAmount']) ?> to <?= htmlspecialchars($pl['clientName']) ?>? Repayments will begin 1 week from today.');" class="inline">
+                        <form id="disbForm_<?= $pl['id'] ?>" method="POST" action="disbursements.php" onsubmit="return confirm('Confirm disbursement of <?= formatCurrency($pl['principalAmount']) ?> to <?= htmlspecialchars($pl['clientName']) ?>? Repayments will commence daily starting from the selected date.');" class="inline">
                             <input type="hidden" name="disburse_loan" value="1">
                             <input type="hidden" name="loan_id" value="<?= $pl['id'] ?>">
                             <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center space-x-1 ml-auto">

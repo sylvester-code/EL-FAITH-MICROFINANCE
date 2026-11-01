@@ -14,6 +14,7 @@ $rate = floatval($_GET['rate'] ?? 10);
 $termMonths = intval($_GET['term'] ?? 1);
 $frequency = $_GET['frequency'] ?? 'DAILY';
 $startDateStr = $_GET['start_date'] ?? date('Y-m-d');
+$firstDueDateStr = $_GET['first_due_date'] ?? '';
 
 // Calculations
 $totalInterest = round($principal * ($rate / 100) * ($termMonths / 12), 2);
@@ -31,10 +32,13 @@ $installmentAmount = round($totalRepayable / $installmentCount, 2);
 // Generate Schedule
 $schedule = [];
 $balance = $totalRepayable;
-$currentDate = new DateTime($startDateStr);
 
-// Policy: First installment due 1 WEEK (7 DAYS) after disbursement!
-$currentDate->modify('+7 days');
+// Policy: First installment starts on disbursement day OR custom Super Admin date, automatically daily
+if (!empty($firstDueDateStr)) {
+    $currentDate = new DateTime($firstDueDateStr);
+} else {
+    $currentDate = new DateTime($startDateStr);
+}
 
 for ($i = 1; $i <= $installmentCount; $i++) {
     $prinPart = round($principal / $installmentCount, 2);

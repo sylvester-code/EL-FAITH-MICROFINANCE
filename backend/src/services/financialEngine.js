@@ -5,19 +5,18 @@ Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
 
 /**
  * Calculate installment due date
- * Repayment starts exactly 1 week (7 days) after the loan has been disbursed
+ * Repayment date starts from the disbursement day or custom date set by Super Admin,
+ * and automatically sets repayment dates daily.
  */
-export const calculateInstallmentDueDate = (startDate, installmentNumber, repaymentFrequency) => {
-  const firstDueDate = new Date(startDate);
-  // Due date starts 1 week (7 days) after loan disbursement
-  firstDueDate.setDate(firstDueDate.getDate() + 7);
+export const calculateInstallmentDueDate = (startDate, installmentNumber, repaymentFrequency, customFirstDueDate = null) => {
+  const baseFirstDate = customFirstDueDate ? new Date(customFirstDueDate) : new Date(startDate);
 
   if (installmentNumber === 1) {
-    return firstDueDate;
+    return baseFirstDate;
   }
 
   const offset = installmentNumber - 1;
-  const dueDate = new Date(firstDueDate);
+  const dueDate = new Date(baseFirstDate);
 
   switch (repaymentFrequency) {
     case 'WEEKLY':
@@ -27,10 +26,10 @@ export const calculateInstallmentDueDate = (startDate, installmentNumber, repaym
       dueDate.setDate(dueDate.getDate() + (offset * 14));
       break;
     case 'DAILY':
+    default:
       dueDate.setDate(dueDate.getDate() + (offset * 1));
       break;
     case 'MONTHLY':
-    default:
       dueDate.setMonth(dueDate.getMonth() + offset);
       break;
   }
@@ -62,10 +61,11 @@ export const calculateLoanDetails = ({
   interestRate,
   interestMethod = 'FLAT_RATE',
   termMonths,
-  repaymentFrequency = 'MONTHLY',
+  repaymentFrequency = 'DAILY',
   processingFeeRate = 2.5,
   insuranceFeeRate = 1.0,
   startDate = new Date(),
+  firstRepaymentDate = null,
 }) => {
   const p = new Decimal(principal);
   const ratePct = new Decimal(interestRate); // monthly interest %
@@ -138,8 +138,8 @@ export const calculateLoanDetails = ({
 
       const installmentTotal = installmentPrincipal.plus(installmentInterest);
       
-      // First repayment installment due date starts exactly 1 week (7 days) after disbursement
-      const dueDate = calculateInstallmentDueDate(start, i, repaymentFrequency);
+      // Repayment installment due date starts from disbursement date or custom Super Admin date, automatically daily
+      const dueDate = calculateInstallmentDueDate(start, i, repaymentFrequency, firstRepaymentDate);
 
       schedule.push({
         installmentNumber: i,
@@ -192,8 +192,8 @@ export const calculateLoanDetails = ({
       remainingPrincipal = remainingPrincipal.minus(principalForPeriod);
       accumulatedInterest = accumulatedInterest.plus(interestForPeriod);
 
-      // First repayment installment due date starts exactly 1 week (7 days) after disbursement
-      const dueDate = calculateInstallmentDueDate(start, i, repaymentFrequency);
+      // Repayment installment due date starts from disbursement date or custom Super Admin date, automatically daily
+      const dueDate = calculateInstallmentDueDate(start, i, repaymentFrequency, firstRepaymentDate);
 
       schedule.push({
         installmentNumber: i,

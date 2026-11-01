@@ -248,16 +248,17 @@ export const reviewApplication = async (req, res) => {
  */
 export const previewCalculation = async (req, res) => {
   try {
-    const { principal, interestRate, interestMethod, termMonths, repaymentFrequency, processingFeeRate, insuranceFeeRate } = req.body;
+    const { principal, interestRate, interestMethod, termMonths, repaymentFrequency, processingFeeRate, insuranceFeeRate, firstRepaymentDate } = req.body;
     
     const details = calculateLoanDetails({
       principal: parseFloat(principal),
       interestRate: parseFloat(interestRate),
       interestMethod,
       termMonths: parseInt(termMonths, 10),
-      repaymentFrequency,
+      repaymentFrequency: repaymentFrequency || 'DAILY',
       processingFeeRate: processingFeeRate !== undefined ? parseFloat(processingFeeRate) : 2.5,
       insuranceFeeRate: insuranceFeeRate !== undefined ? parseFloat(insuranceFeeRate) : 1.0,
+      firstRepaymentDate: firstRepaymentDate ? new Date(firstRepaymentDate) : new Date(),
     });
 
     return res.json({ success: true, data: details });
@@ -341,15 +342,21 @@ export const disburseLoan = async (req, res) => {
       }
     }
 
+    // Repayment date starts from the day loans were disbursed OR custom date set by Super Admin, daily frequency
+    const firstRepaymentDate = req.body.firstRepaymentDate
+      ? new Date(req.body.firstRepaymentDate)
+      : new Date();
+
     const calcResult = calculateLoanDetails({
       principal: approvedPrincipal,
       interestRate: approvedRate,
       interestMethod,
       termMonths,
-      repaymentFrequency,
+      repaymentFrequency: 'DAILY',
       processingFeeRate: Number(application.product.processingFeeRate),
       insuranceFeeRate: Number(application.product.insuranceFeeRate),
       startDate: new Date(),
+      firstRepaymentDate,
     });
 
     const year = new Date().getFullYear();
@@ -370,7 +377,7 @@ export const disburseLoan = async (req, res) => {
           principalAmount: calcResult.principal,
           approvedInterestRate: calcResult.approvedInterestRate,
           interestMethod,
-          repaymentFrequency,
+          repaymentFrequency: 'DAILY',
           termMonths: calcResult.termMonths,
           totalScheduledInterest: calcResult.totalScheduledInterest,
           totalFees: calcResult.totalFees,

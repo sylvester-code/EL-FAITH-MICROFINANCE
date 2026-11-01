@@ -70,6 +70,60 @@ const getInitialStore = () => ({
       isActive: true,
     },
   ],
+  applications: [
+    {
+      id: 'app-001',
+      applicationNumber: 'EF-APP-2026-0001',
+      clientId: 'cli-003',
+      client: {
+        id: 'cli-003',
+        fullName: 'Kofi Boateng',
+        clientId: 'EF-CL-0003',
+        phone: '+233 24 555 1003',
+      },
+      productId: 'prod-001',
+      product: {
+        id: 'prod-001',
+        name: 'Daily Business Capital Microloan',
+        interestMethod: 'FLAT_RATE',
+        processingFeeRate: 2.5,
+        insuranceFeeRate: 1.0,
+      },
+      requestedAmount: 6000,
+      approvedAmount: 6000,
+      proposedInterestRate: 3.5,
+      repaymentPeriodMonths: 2,
+      repaymentFrequency: 'DAILY',
+      status: 'APPROVED',
+      approvedAt: '2026-10-30T10:00:00Z',
+    },
+    {
+      id: 'app-002',
+      applicationNumber: 'EF-APP-2026-0002',
+      clientId: 'cli-004',
+      client: {
+        id: 'cli-004',
+        fullName: 'Yaa Mansa',
+        clientId: 'EF-CL-0004',
+        phone: '+233 24 555 1004',
+      },
+      productId: 'prod-001',
+      product: {
+        id: 'prod-001',
+        name: 'Daily Business Capital Microloan',
+        interestMethod: 'FLAT_RATE',
+        processingFeeRate: 2.5,
+        insuranceFeeRate: 1.0,
+      },
+      requestedAmount: 3500,
+      approvedAmount: 3500,
+      proposedInterestRate: 3.5,
+      repaymentPeriodMonths: 1,
+      repaymentFrequency: 'DAILY',
+      status: 'APPROVED',
+      approvedAt: '2026-10-31T09:30:00Z',
+    },
+  ],
   loans: [
     {
       id: 'loan-001',
@@ -292,9 +346,82 @@ export const handleMockRequest = async (endpoint, options = {}) => {
     return { success: true, message: 'Client and associated records deleted permanently' };
   }
 
-  // Loans
-  if ((url === '/loans' || url === '/loans/applications') && method === 'GET') {
+  // Loans & Applications
+  if (url === '/loans/applications' && method === 'GET') {
+    const apps = store.applications || [];
+    return { success: true, data: apps };
+  }
+
+  if (url === '/loans' && method === 'GET') {
     return { success: true, data: store.loans };
+  }
+
+  if (url === '/loans/preview-calc' && method === 'POST') {
+    const p = Number(body.principal || 5000);
+    const proc = Math.round(p * 0.025 * 100) / 100;
+    const ins = Math.round(p * 0.01 * 100) / 100;
+    const net = Math.round((p - proc - ins) * 100) / 100;
+    const firstDue = body.firstRepaymentDate || new Date().toISOString().split('T')[0];
+
+    return {
+      success: true,
+      data: {
+        principal: p,
+        processingFee: proc,
+        insuranceFee: ins,
+        netDisbursement: net,
+        firstDueDate: firstDue,
+        repaymentFrequency: 'DAILY',
+      },
+    };
+  }
+
+  if (url === '/loans/disburse' && method === 'POST') {
+    const apps = store.applications || [];
+    const app = apps.find((a) => a.id === body.applicationId) || apps[0];
+    const principal = app ? Number(app.approvedAmount || app.requestedAmount || 5000) : 5000;
+    const termMonths = app ? Number(app.repaymentPeriodMonths || 1) : 1;
+    const interest = Math.round(principal * 0.035 * termMonths * 100) / 100;
+    const totalRepayable = principal + interest;
+
+    // Repayment date: Starts from disbursement date OR set by Super Admin
+    const firstRepaymentDate = body.firstRepaymentDate || new Date().toISOString().split('T')[0];
+
+    const newLoan = {
+      id: `loan-${Date.now()}`,
+      loanNumber: `LN-${new Date().getFullYear()}-000${store.loans.length + 1}`,
+      clientId: app ? app.clientId : 'cli-001',
+      client: app ? app.client : { fullName: 'Valued Client', clientId: 'EF-CL' },
+      principalAmount: principal,
+      totalInterest: interest,
+      totalPayable: totalRepayable,
+      totalPaid: 0,
+      outstandingBalance: totalRepayable,
+      repaymentFrequency: 'DAILY',
+      status: 'ACTIVE',
+      disbursementDate: new Date().toISOString().split('T')[0],
+      firstDueDate: firstRepaymentDate,
+      createdAt: new Date().toISOString(),
+    };
+
+    store.loans.unshift(newLoan);
+    store.applications = apps.filter((a) => a.id !== body.applicationId);
+    saveStore(store);
+
+    return {
+      success: true,
+      message: `Loan ${newLoan.loanNumber} successfully disbursed! Daily repayment schedule commences on ${firstRepaymentDate}.`,
+      data: {
+        loan: newLoan,
+        disbursement: {
+          id: `disb-${Date.now()}`,
+          grossPrincipal: principal,
+          netDisbursedAmount: principal * 0.965,
+          firstRepaymentDate,
+        },
+        voucherUrl: null,
+      },
+    };
   }
 
   // Repayments
@@ -373,3 +500,4 @@ export const handleMockRequest = async (endpoint, options = {}) => {
   // Default fallback response
   return { success: true, data: [] };
 };
+
