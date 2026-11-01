@@ -105,21 +105,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['disburse_loan'])) {
 
                     $scheduleDate = clone $firstInstallmentDate;
                     for ($i = 1; $i <= $installmentCount; $i++) {
+                        $prinPart = round($loan['principalAmount'] / $installmentCount, 2);
+                        $intPart = round($loan['totalScheduledInterest'] / $installmentCount, 2);
+
                         $schStmt = $pdo->prepare("
                             INSERT INTO repaymentschedule (
-                                loanId, installmentNumber, dueDate, scheduledPrincipal,
-                                scheduledInterest, scheduledFees, totalDue, status, createdAt, updatedAt
+                                loanId, installmentNumber, dueDate, principalDue,
+                                interestDue, feesDue, totalDue, principalPaid,
+                                interestPaid, feesPaid, totalPaid, remainingBalance,
+                                status, createdAt, updatedAt
                             ) VALUES (
                                 ?, ?, ?, ?,
-                                ?, 0.00, ?, 'PENDING', NOW(3), NOW(3)
+                                ?, 0.00, ?, 0.00,
+                                0.00, 0.00, 0.00, ?,
+                                'UPCOMING', NOW(3), NOW(3)
                             )
                         ");
                         $schStmt->execute([
                             $loan['id'],
                             $i,
                             $scheduleDate->format('Y-m-d H:i:s'),
-                            round($loan['principalAmount'] / $installmentCount, 2),
-                            round($loan['totalScheduledInterest'] / $installmentCount, 2),
+                            $prinPart,
+                            $intPart,
+                            $installmentAmount,
                             $installmentAmount
                         ]);
 
@@ -148,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['disburse_loan'])) {
                     ]);
 
                     $pdo->commit();
-                    $success = "Loan for {$loan['clientName']} successfully disbursed (" . formatCurrency($principal) . ")! First repayment due on " . $firstInstallmentDate->format('d M Y') . " (1 week from today). Ref: {$disbRef}";
+                    $success = "Loan for {$loan['clientName']} successfully disbursed (" . formatCurrency($principal) . ")! First daily repayment commences on " . $firstInstallmentDate->format('d M Y') . ". Reference: {$disbRef}";
                 } catch (Exception $e) {
                     $pdo->rollBack();
                     $error = "Disbursement error: " . $e->getMessage();
