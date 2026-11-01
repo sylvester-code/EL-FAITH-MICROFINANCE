@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install && npx prisma generate",
+    "build": "cd frontend && npm install && npm run build",
+    "build:full": "cd frontend && npm install && npm run build && cd ../backend && npm install && npx prisma generate",
     "start": "cd backend && node src/server.js",
     "prisma:push": "cd backend && npx prisma db push",
     "seed": "cd backend && node src/database/seed.js"

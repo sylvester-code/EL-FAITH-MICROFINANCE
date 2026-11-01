@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['disburse_loan'])) {
                     $pdo->beginTransaction();
 
                     $disbDate = new DateTime();
-                    
+
                     // Repayment start date: Starts on the disbursement date OR custom date set by Super Admin
                     $firstDateInput = trim($_POST['first_repayment_date'] ?? '');
                     if (!empty($firstDateInput)) {
@@ -192,17 +192,19 @@ $recentDisbursements = $recentDisbursementsStmt->fetchAll();
 
 <!-- Alerts -->
 <?php if ($success): ?>
-<div class="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center space-x-2">
-    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
-    <span><?= htmlspecialchars($success) ?></span>
-</div>
+    <div
+        class="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center space-x-2">
+        <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
+        <span><?= htmlspecialchars($success) ?></span>
+    </div>
 <?php endif; ?>
 
 <?php if ($error): ?>
-<div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-sm font-semibold flex items-center space-x-2">
-    <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
-    <span><?= htmlspecialchars($error) ?></span>
-</div>
+    <div
+        class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-sm font-semibold flex items-center space-x-2">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
+        <span><?= htmlspecialchars($error) ?></span>
+    </div>
 <?php endif; ?>
 
 <!-- Top Info Banner: Daily Repayment Policy & Super Admin Control -->
@@ -213,7 +215,10 @@ $recentDisbursements = $recentDisbursementsStmt->fetchAll();
     <div>
         <div class="text-sm font-bold text-emerald-950">Daily Repayment Schedule System</div>
         <div class="text-xs text-emerald-800 mt-0.5">
-            By system policy, the repayment frequency for all loans is <strong>DAILY</strong>. The repayment start date defaults to <strong>the day the loan is disbursed</strong> or <strong>can be set to any custom date by the Super Admin</strong>. The system will then automatically calculate and generate all daily repayment installment dates.
+            By system policy, the repayment frequency for all loans is <strong>DAILY</strong>. The repayment start date
+            defaults to <strong>the day the loan is disbursed</strong> or <strong>can be set to any custom date by the
+                Super Admin</strong>. The system will then automatically calculate and generate all daily repayment
+            installment dates.
         </div>
     </div>
 </div>
@@ -228,7 +233,8 @@ $recentDisbursements = $recentDisbursementsStmt->fetchAll();
                 <i data-lucide="badge-dollar-sign" class="w-5 h-5 text-emerald-600"></i>
                 <span>Loans Awaiting Fund Disbursement</span>
             </h3>
-            <p class="text-xs text-slate-500">Super Admin disbursement desk with custom daily repayment start date selection</p>
+            <p class="text-xs text-slate-500">Super Admin disbursement desk with custom daily repayment start date
+                selection</p>
         </div>
         <span class="text-xs font-bold px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full">
             <?= count($pendingLoans) ?> Ready
@@ -236,59 +242,69 @@ $recentDisbursements = $recentDisbursementsStmt->fetchAll();
     </div>
 
     <?php if (empty($pendingLoans)): ?>
-    <div class="p-8 text-center text-slate-400 text-sm">
-        No approved loans currently awaiting disbursement. Approve pending loan applications in the Loan Applications section.
-    </div>
+        <div class="p-8 text-center text-slate-400 text-sm">
+            No approved loans currently awaiting disbursement. Approve pending loan applications in the Loan Applications
+            section.
+        </div>
     <?php else: ?>
-    <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-            <thead>
-                <tr class="text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                    <th class="pb-3">Account / Client</th>
-                    <th class="pb-3">Loan Product</th>
-                    <th class="pb-3">Term & Frequency</th>
-                    <th class="pb-3">First Due Date (Daily)</th>
-                    <th class="pb-3 text-right">Approved Principal</th>
-                    <th class="pb-3 text-right">Action</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-                <?php foreach ($pendingLoans as $pl): 
-                    $todayDate = date('Y-m-d');
-                ?>
-                <tr class="hover:bg-slate-50 transition">
-                    <td class="py-3">
-                        <div class="font-bold text-slate-900"><?= htmlspecialchars($pl['clientName']) ?></div>
-                        <div class="text-[11px] text-slate-500 font-mono"><?= htmlspecialchars($pl['loanAccountNumber']) ?> &bull; <?= htmlspecialchars($pl['clientTown'] ?? 'Wassa Powuako') ?></div>
-                    </td>
-                    <td class="py-3 font-semibold text-slate-700"><?= htmlspecialchars($pl['productName']) ?></td>
-                    <td class="py-3 text-xs text-slate-600">
-                        <?= $pl['termMonths'] ?> Months &bull; <span class="font-bold text-emerald-700">DAILY</span>
-                    </td>
-                    <td class="py-3">
-                        <div class="flex items-center gap-1.5">
-                            <input type="date" form="disbForm_<?= $pl['id'] ?>" name="first_repayment_date" value="<?= $todayDate ?>" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500">
-                            <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">Daily auto-schedule</span>
-                        </div>
-                    </td>
-                    <td class="py-3 text-right font-black text-slate-900 text-base">
-                        <?= formatCurrency($pl['principalAmount']) ?>
-                    </td>
-                    <td class="py-3 text-right">
-                        <form id="disbForm_<?= $pl['id'] ?>" method="POST" action="disbursements.php" onsubmit="return confirm('Confirm disbursement of <?= formatCurrency($pl['principalAmount']) ?> to <?= htmlspecialchars($pl['clientName']) ?>? Repayments will commence daily starting from the selected date.');" class="inline">
-                            <input type="hidden" name="disburse_loan" value="1">
-                            <input type="hidden" name="loan_id" value="<?= $pl['id'] ?>">
-                            <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center space-x-1 ml-auto">
-                                <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                                <span>Disburse Funds</span>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                        <th class="pb-3">Account / Client</th>
+                        <th class="pb-3">Loan Product</th>
+                        <th class="pb-3">Term & Frequency</th>
+                        <th class="pb-3">First Due Date (Daily)</th>
+                        <th class="pb-3 text-right">Approved Principal</th>
+                        <th class="pb-3 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <?php foreach ($pendingLoans as $pl):
+                        $todayDate = date('Y-m-d');
+                        ?>
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="py-3">
+                                <div class="font-bold text-slate-900"><?= htmlspecialchars($pl['clientName']) ?></div>
+                                <div class="text-[11px] text-slate-500 font-mono">
+                                    <?= htmlspecialchars($pl['loanAccountNumber']) ?> &bull;
+                                    <?= htmlspecialchars($pl['clientTown'] ?? 'Wassa Powuako') ?></div>
+                            </td>
+                            <td class="py-3 font-semibold text-slate-700"><?= htmlspecialchars($pl['productName']) ?></td>
+                            <td class="py-3 text-xs text-slate-600">
+                                <?= $pl['termMonths'] ?> Months &bull; <span class="font-bold text-emerald-700">DAILY</span>
+                            </td>
+                            <td class="py-3">
+                                <div class="flex items-center gap-1.5">
+                                    <input type="date" form="disbForm_<?= $pl['id'] ?>" name="first_repayment_date"
+                                        value="<?= $todayDate ?>"
+                                        class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                                    <span
+                                        class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">Daily
+                                        auto-schedule</span>
+                                </div>
+                            </td>
+                            <td class="py-3 text-right font-black text-slate-900 text-base">
+                                <?= formatCurrency($pl['principalAmount']) ?>
+                            </td>
+                            <td class="py-3 text-right">
+                                <form id="disbForm_<?= $pl['id'] ?>" method="POST" action="disbursements.php"
+                                    onsubmit="return confirm('Confirm disbursement of <?= formatCurrency($pl['principalAmount']) ?> to <?= htmlspecialchars($pl['clientName']) ?>? Repayments will commence daily starting from the selected date.');"
+                                    class="inline">
+                                    <input type="hidden" name="disburse_loan" value="1">
+                                    <input type="hidden" name="loan_id" value="<?= $pl['id'] ?>">
+                                    <button type="submit"
+                                        class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center space-x-1 ml-auto">
+                                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                        <span>Disburse Funds</span>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endif; ?>
 </div>
 
@@ -307,48 +323,49 @@ $recentDisbursements = $recentDisbursementsStmt->fetchAll();
     </div>
 
     <?php if (empty($recentDisbursements)): ?>
-    <div class="p-8 text-center text-slate-400 text-sm">
-        No loans have been disbursed yet.
-    </div>
+        <div class="p-8 text-center text-slate-400 text-sm">
+            No loans have been disbursed yet.
+        </div>
     <?php else: ?>
-    <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-            <thead>
-                <tr class="text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                    <th class="pb-3">Reference / Date</th>
-                    <th class="pb-3">Client Name</th>
-                    <th class="pb-3">Method</th>
-                    <th class="pb-3">Disbursed By</th>
-                    <th class="pb-3 text-right">Net Amount Disbursed</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-                <?php foreach ($recentDisbursements as $rd): ?>
-                <tr class="hover:bg-slate-50 transition">
-                    <td class="py-3">
-                        <div class="font-bold text-slate-900"><?= htmlspecialchars($rd['disbursementReference']) ?></div>
-                        <div class="text-[11px] text-slate-400"><?= formatDateTime($rd['disbursedAt']) ?></div>
-                    </td>
-                    <td class="py-3">
-                        <div class="font-bold text-slate-900"><?= htmlspecialchars($rd['clientName']) ?></div>
-                        <div class="text-[11px] text-slate-500"><?= htmlspecialchars($rd['clientCode']) ?> &bull; <?= htmlspecialchars($rd['communityTown'] ?? 'Wassa Powuako') ?></div>
-                    </td>
-                    <td class="py-3">
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
-                            <?= htmlspecialchars(str_replace('_', ' ', $rd['paymentMethod'])) ?>
-                        </span>
-                    </td>
-                    <td class="py-3 font-semibold text-slate-700"><?= htmlspecialchars($rd['disbursedBy']) ?></td>
-                    <td class="py-3 text-right font-black text-emerald-600 text-base">
-                        <?= formatCurrency($rd['netDisbursedAmount']) ?>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                        <th class="pb-3">Reference / Date</th>
+                        <th class="pb-3">Client Name</th>
+                        <th class="pb-3">Method</th>
+                        <th class="pb-3">Disbursed By</th>
+                        <th class="pb-3 text-right">Net Amount Disbursed</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <?php foreach ($recentDisbursements as $rd): ?>
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="py-3">
+                                <div class="font-bold text-slate-900"><?= htmlspecialchars($rd['disbursementReference']) ?>
+                                </div>
+                                <div class="text-[11px] text-slate-400"><?= formatDateTime($rd['disbursedAt']) ?></div>
+                            </td>
+                            <td class="py-3">
+                                <div class="font-bold text-slate-900"><?= htmlspecialchars($rd['clientName']) ?></div>
+                                <div class="text-[11px] text-slate-500"><?= htmlspecialchars($rd['clientCode']) ?> &bull;
+                                    <?= htmlspecialchars($rd['communityTown'] ?? 'Wassa Powuako') ?></div>
+                            </td>
+                            <td class="py-3">
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
+                                    <?= htmlspecialchars(str_replace('_', ' ', $rd['paymentMethod'])) ?>
+                                </span>
+                            </td>
+                            <td class="py-3 font-semibold text-slate-700"><?= htmlspecialchars($rd['disbursedBy']) ?></td>
+                            <td class="py-3 text-right font-black text-emerald-600 text-base">
+                                <?= formatCurrency($rd['netDisbursedAmount']) ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endif; ?>
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
-
