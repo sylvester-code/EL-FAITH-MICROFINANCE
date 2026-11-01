@@ -80,87 +80,106 @@ export const AppLayout = ({ children }) => {
     }
   };
 
+  const isExecutive = hasRole('SUPER_ADMIN', 'CEO');
+
   // Define nav links for management & staff operations
-  const navLinks = [
-    {
-      label: 'Dashboard',
-      path: '/portal/dashboard',
-      icon: LayoutDashboard,
-      visible: true,
-    },
-    {
-      label: 'Staff Management',
-      path: '/portal/staff',
-      icon: Users,
-      visible: hasRole('SUPER_ADMIN', 'CEO'),
-    },
-    {
-      label: 'Client Directory',
-      path: '/portal/clients',
-      icon: UserCheck,
-      visible: true,
-    },
-    {
-      label: 'Loan Calculator',
-      path: '/portal/calculator',
-      icon: Calculator,
-      visible: true,
-    },
-    {
-      label: 'Loan Products (10%)',
-      path: '/portal/products',
-      icon: Package,
-      visible: true,
-    },
-    {
-      label: 'Loan Applications',
-      path: '/portal/applications',
-      icon: FileText,
-      visible: true,
-    },
-    {
-      label: 'Disbursements',
-      path: '/portal/disbursements',
-      icon: Banknote,
-      visible: hasRole('SUPER_ADMIN', 'CEO', 'BRANCH_MANAGER', 'CASHIER', 'ACCOUNTANT'),
-    },
-    {
-      label: 'Repayments & Receipts',
-      path: '/portal/repayments',
-      icon: Receipt,
-      visible: true,
-    },
-    {
-      label: 'Overdue & Recovery',
-      path: '/portal/overdue',
-      icon: AlertTriangle,
-      visible: hasRole('SUPER_ADMIN', 'CEO', 'BRANCH_MANAGER', 'LOAN_OFFICER'),
-    },
-    {
-      label: 'Cashbook & Accounts',
-      path: '/portal/cashbook',
-      icon: BookOpen,
-      visible: hasRole('SUPER_ADMIN', 'CEO', 'BRANCH_MANAGER', 'ACCOUNTANT', 'AUDITOR', 'CASHIER'),
-    },
-    {
-      label: 'Operational Expenses',
-      path: '/portal/expenses',
-      icon: DollarSign,
-      visible: hasRole('SUPER_ADMIN', 'CEO', 'BRANCH_MANAGER', 'ACCOUNTANT', 'CASHIER'),
-    },
-    {
-      label: 'Audit & Compliance Logs',
-      path: '/portal/audit-logs',
-      icon: History,
-      visible: hasRole('SUPER_ADMIN', 'CEO', 'AUDITOR', 'ACCOUNTANT'),
-    },
-    {
-      label: 'Settings & Backups',
-      path: '/portal/settings',
-      icon: Settings,
-      visible: hasRole('SUPER_ADMIN', 'CEO'),
-    },
-  ].filter((item) => item.visible);
+  // Policy: Regular staff can ONLY Register Client and Receive / Key In Payment
+  const navLinks = (isExecutive
+    ? [
+        {
+          label: 'Dashboard',
+          path: '/portal/dashboard',
+          icon: LayoutDashboard,
+          visible: true,
+        },
+        {
+          label: 'Staff Management',
+          path: '/portal/staff',
+          icon: Users,
+          visible: hasRole('SUPER_ADMIN'),
+        },
+        {
+          label: 'Client Directory',
+          path: '/portal/clients',
+          icon: UserCheck,
+          visible: true,
+        },
+        {
+          label: 'Loan Calculator',
+          path: '/portal/calculator',
+          icon: Calculator,
+          visible: true,
+        },
+        {
+          label: 'Loan Products (10%)',
+          path: '/portal/products',
+          icon: Package,
+          visible: true,
+        },
+        {
+          label: 'Loan Applications',
+          path: '/portal/applications',
+          icon: FileText,
+          visible: true,
+        },
+        {
+          label: 'Disbursements',
+          path: '/portal/disbursements',
+          icon: Banknote,
+          visible: true,
+        },
+        {
+          label: 'Repayments & Receipts',
+          path: '/portal/repayments',
+          icon: Receipt,
+          visible: true,
+        },
+        {
+          label: 'Overdue & Recovery',
+          path: '/portal/overdue',
+          icon: AlertTriangle,
+          visible: true,
+        },
+        {
+          label: 'Cashbook & Accounts',
+          path: '/portal/cashbook',
+          icon: BookOpen,
+          visible: true,
+        },
+        {
+          label: 'Operational Expenses',
+          path: '/portal/expenses',
+          icon: DollarSign,
+          visible: true,
+        },
+        {
+          label: 'Audit & Compliance Logs',
+          path: '/portal/audit-logs',
+          icon: History,
+          visible: true,
+        },
+        {
+          label: 'Settings & Backups',
+          path: '/portal/settings',
+          icon: Settings,
+          visible: hasRole('SUPER_ADMIN'),
+        },
+      ]
+    : [
+        {
+          label: 'Receive & Key In Payment',
+          path: '/portal/repayments',
+          icon: Receipt,
+          visible: true,
+        },
+        {
+          label: 'Register Client',
+          path: '/portal/clients',
+          icon: UserCheck,
+          visible: true,
+        },
+      ]
+  ).filter((item) => item.visible);
 
   const roleColors = {
     SUPER_ADMIN: 'bg-rose-500/20 text-rose-300 border-rose-500/30',

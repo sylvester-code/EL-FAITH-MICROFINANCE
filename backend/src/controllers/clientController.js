@@ -319,3 +319,56 @@ export const addGuarantor = async (req, res) => {
   }
 };
 
+export const deleteClient = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const clientId = parseInt(id, 10);
+
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      include: { loans: true },
+    });
+
+    if (!client) {
+      return res.status(404).json({ success: false, message: 'Client not found' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const loanIds = client.loans.map((l) => l.id);
+
+      if (loanIds.length > 0) {
+        await tx.repaymentSchedule.deleteMany({ where: { loanId: { in: loanIds } } });
+        await tx.loanDisbursement.deleteMany({ where: { loanId: { in: loanIds } } });
+        await tx.repayment.deleteMany({ where: { loanId: { in: loanIds } } });
+        await tx.loan.deleteMany({ where: { id: { in: loanIds } } });
+      }
+
+      const applications = await tx.loanApplication.findMany({ where: { clientId } });
+      const appIds = applications.map((a) => a.id);
+      if (appIds.length > 0) {
+        await tx.loanApplicationReview.deleteMany({ where: { applicationId: { in: appIds } } });
+        await tx.loanApplication.deleteMany({ where: { id: { in: appIds } } });
+      }
+
+      await tx.repayment.deleteMany({ where: { clientId } });
+      await tx.clientComplaint.deleteMany({ where: { clientId } });
+      await tx.followUpActivity.deleteMany({ where: { clientId } });
+      await tx.guarantor.deleteMany({ where: { clientId } });
+
+      await tx.client.delete({ where: { id: clientId } });
+    });
+
+    await logAudit({
+      action: 'DELETE_CLIENT',
+      entityType: 'Client',
+      entityId: clientId,
+      details: { clientName: client.fullName, clientCode: client.clientId },
+      req,
+    });
+
+    return res.json({ success: true, message: `Client ${client.fullName} successfully deleted.` });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+

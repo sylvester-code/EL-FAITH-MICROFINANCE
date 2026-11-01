@@ -54,6 +54,7 @@ router.get('/clients', authenticateToken, clientCtrl.listClients);
 router.post('/clients', authenticateToken, clientCtrl.registerClient);
 router.get('/clients/:id', authenticateToken, clientCtrl.getClientProfile);
 router.put('/clients/:id', authenticateToken, clientCtrl.updateClient);
+router.delete('/clients/:id', authenticateToken, requireRole(ROLES.SUPER_ADMIN), clientCtrl.deleteClient);
 router.post('/clients/:id/guarantors', authenticateToken, clientCtrl.addGuarantor);
 
 // ================= LOAN PRODUCTS =================

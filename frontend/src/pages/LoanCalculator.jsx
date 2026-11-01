@@ -20,7 +20,7 @@ export const LoanCalculator = () => {
   const [interestRate, setInterestRate] = useState(10); // 10% fixed per user policy
   const [termMonths, setTermMonths] = useState(6);
   const [interestMethod, setInterestMethod] = useState('FLAT_RATE');
-  const [repaymentFrequency, setRepaymentFrequency] = useState('MONTHLY');
+  const [repaymentFrequency, setRepaymentFrequency] = useState('DAILY');
   const [processingFeeRate, setProcessingFeeRate] = useState(2.5);
   const [insuranceFeeRate, setInsuranceFeeRate] = useState(1.0);
   const [startDate, setStartDate] = useState(() => new Date().toISOString().split('T')[0]);

@@ -5,6 +5,7 @@ import {
   Plus,
   UserCheck,
   Eye,
+  Trash2,
   Phone,
   MapPin,
   CreditCard,
@@ -150,6 +151,19 @@ export const Clients = () => {
     }
   };
 
+  const handleDeleteClient = async (clientId, clientName, clientCode) => {
+    if (!window.confirm(`WARNING: Are you sure you want to permanently delete client "${clientName}" (${clientCode})? All associated loans and transaction records will be permanently removed. This action cannot be undone.`)) return;
+    try {
+      const res = await api.delete(`/clients/${clientId}`);
+      if (res.success) {
+        setSuccessMsg(res.message || 'Client successfully deleted.');
+        fetchClients();
+      }
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to delete client');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -236,14 +250,23 @@ export const Clients = () => {
                     <td className="py-3 px-4">
                       <StatusBadge status={c.status} />
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-right flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => handleOpenProfile(c.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-700 font-bold rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-700 font-bold rounded-lg transition-colors text-xs"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         Profile
                       </button>
+                      {user?.role === 'SUPER_ADMIN' && (
+                        <button
+                          onClick={() => handleDeleteClient(c.id, c.fullName, c.clientId)}
+                          title="Delete Client Profile"
+                          className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

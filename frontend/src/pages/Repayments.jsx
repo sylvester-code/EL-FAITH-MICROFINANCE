@@ -146,6 +146,18 @@ export const Repayments = () => {
     }
   };
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const myCollections = repayments.filter(
+    (r) => r.receivingCashierId === user?.id || r.cashier?.id === user?.id
+  );
+  const myTotalAmount = myCollections.reduce(
+    (sum, r) => sum + parseFloat(r.amountPaid || 0),
+    0
+  );
+  const myTodayAmount = myCollections
+    .filter((r) => (r.paymentDate || r.createdAt)?.slice(0, 10) === todayStr)
+    .reduce((sum, r) => sum + parseFloat(r.amountPaid || 0), 0);
+
   const filteredRepayments = repayments.filter((r) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -163,11 +175,67 @@ export const Repayments = () => {
 
   return (
     <div className="space-y-6">
+      {/* Personal Staff Collections Widget */}
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white rounded-3xl p-6 shadow-xl border border-slate-700">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-700/60">
+          <div>
+            <div className="text-emerald-400 font-bold text-xs uppercase tracking-wider">
+              Personal Collection Desk • {user?.fullName || user?.username} ({user?.staffId || 'STAFF'})
+            </div>
+            <h2 className="text-xl font-black text-white mt-0.5">My Total Money Collected</h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Personal field and counter collections with customer name, amount, and exact timestamp.
+            </p>
+          </div>
+          <button
+            onClick={() => setRecordModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-all self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            Receive & Key In Payment
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-slate-800/80 border border-slate-700 p-4 rounded-2xl">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+              Today's Collections ({new Date().toLocaleDateString('en-GB')})
+            </div>
+            <div className="text-2xl font-black text-emerald-400">
+              GH₵ {myTodayAmount.toFixed(2)}
+            </div>
+            <div className="text-[11px] text-slate-400 font-medium mt-1">
+              {myCollections.filter((r) => (r.paymentDate || r.createdAt)?.slice(0, 10) === todayStr).length} payment(s) today
+            </div>
+          </div>
+
+          <div className="bg-slate-800/80 border border-slate-700 p-4 rounded-2xl">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+              Total Money Collected by Me
+            </div>
+            <div className="text-2xl font-black text-white">
+              GH₵ {myTotalAmount.toFixed(2)}
+            </div>
+            <div className="text-[11px] text-slate-400 font-medium mt-1">
+              {myCollections.length} total receipts keyed in
+            </div>
+          </div>
+
+          <div className="bg-slate-800/80 border border-slate-700 p-4 rounded-2xl flex flex-col justify-between">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+              Workstation Branch
+            </div>
+            <div className="text-base font-bold text-white">Wassa Powuako Branch</div>
+            <div className="text-xs text-emerald-400 font-semibold mt-1">Status: Active &bull; Connected</div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-navy-950 tracking-tight">Repayments & Collections</h2>
+          <h2 className="text-xl font-extrabold text-navy-950 tracking-tight">Repayments & Receipts Ledger</h2>
           <p className="text-xs text-slate-500">
-            Field and counter loan collections, customer receipt tracking, and automatic balance allocation.
+            Audit trail of customer payments with name, amount, and exact receipt timestamp.
           </p>
         </div>
 
