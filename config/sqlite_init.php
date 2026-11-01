@@ -155,16 +155,19 @@ function initSqliteDatabase(PDO $pdo) {
             receiptNumber TEXT UNIQUE NOT NULL,
             loanId INTEGER NOT NULL,
             clientId INTEGER NOT NULL,
-            cashierUserId INTEGER NOT NULL,
-            amount REAL NOT NULL,
-            principalPortion REAL NOT NULL,
-            interestPortion REAL NOT NULL,
-            feePortion REAL DEFAULT 0,
-            paymentMethod TEXT DEFAULT 'CASH',
-            paymentChannel TEXT DEFAULT 'FIELD_CASH',
-            referenceNumber TEXT,
+            paymentReference TEXT,
+            amountPaid REAL NOT NULL,
             paymentDate TEXT NOT NULL,
+            paymentMethod TEXT DEFAULT 'CASH',
+            transactionReference TEXT,
+            principalComponent REAL NOT NULL,
+            interestComponent REAL NOT NULL,
+            feesComponent REAL DEFAULT 0,
+            outstandingBalanceAfter REAL NOT NULL,
+            receivingCashierId INTEGER NOT NULL,
+            receiptPdfUrl TEXT,
             isReversed INTEGER DEFAULT 0,
+            notes TEXT,
             createdAt TEXT
         );
 
@@ -230,13 +233,15 @@ function initSqliteDatabase(PDO $pdo) {
         );
 
         INSERT OR IGNORE INTO repayment (
-            id, receiptNumber, loanId, clientId, cashierUserId,
-            amount, principalPortion, interestPortion, feePortion,
-            paymentMethod, paymentChannel, referenceNumber, paymentDate, isReversed, createdAt
+            id, receiptNumber, loanId, clientId, paymentReference,
+            amountPaid, principalComponent, interestComponent, feesComponent,
+            outstandingBalanceAfter, receivingCashierId, paymentMethod, transactionReference,
+            paymentDate, isReversed, createdAt
         ) VALUES (
-            1, 'REC-20261028-0001', 1, 1, 2,
+            1, 'REC-20261028-0001', 1, 1, 'REF-MOM-001',
             500.00, 450.00, 50.00, 0.00,
-            'CASH', 'FIELD_CASH', 'REF-MOM-001', datetime('now', '-2 hours'), 0, datetime('now')
+            4850.00, 2, 'CASH', 'CASH-001',
+            datetime('now', '-2 hours'), 0, datetime('now')
         );
     ");
 
